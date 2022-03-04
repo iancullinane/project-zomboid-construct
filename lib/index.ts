@@ -12,12 +12,17 @@ import * as r53 from "aws-cdk-lib/aws-route53";
 import * as logic from "./logic/server-config"
 import { ZomboidAccess } from "./components/zomboid-access"
 
+const TEMPLATE_DIR = path.join(__dirname, "..", "assets",)
+const DIST_DIR = path.join(process.cwd(), "assets")
+
+path.join(process.cwd(), "assets")
 export interface GameServerProps {
   role: iam.IRole,
   vpc: ec2.IVpc,
   sg: ec2.ISecurityGroup,
   hz: r53.IHostedZone,
   serverName?: string,
+  modFile?: Buffer,
 }
 
 export class GameServerStack extends Construct implements ITaggable {
@@ -39,16 +44,19 @@ export class GameServerStack extends Construct implements ITaggable {
       "us-east-1": ctx['env']['ami'], // Ubuntu xenial us-east-1 LTS
     });
 
+    // This file and path stuff is really ugly but I don't know TS well enough...
+
     //::todo either provide data for various templates, or provide the consumer
     // a method to pass their own files (or both), for now always load from the
     // base construct templates
-    let templatePath = path.join(__dirname, "..", "assets", "templates")
-    let distPath = path.join(__dirname, "..", "assets", "dist")
+
+
+
     let serverFiles = new Map<string, logic.TemplateBuilder>()
 
     // This project includes `template-file` but at this commit only the
     // project unit file is making use of it: https://www.npmjs.com/package/template-file
-    const data = {
+    const unitFileConfig = {
       config: {
         servername: props.serverName,
         adminPW: "PasswordXYZ",
@@ -56,15 +64,24 @@ export class GameServerStack extends Construct implements ITaggable {
       }
     };
 
+    let { mods, ids } = logic.parseMods(props.modFile!)
+    const serverFileConfig = {
+      config: {
+        mods: mods.join(";"),
+        ids: ids.join(";"),
+      }
+
+    }
     // The key is the destination of the files, the object in the second 
     // argument is the Buffer with the template, and the data object with any
     // replacements, currently the unit file is the only "real" template
-    serverFiles.set(path.join(distPath, "server-config", `${props.serverName}_SandboxVars.lua`), { b: fs.readFileSync(path.join(templatePath, "template_SandboxVars.lua")), d: {} })
-    serverFiles.set(path.join(distPath, "server-config", `${props.serverName}_spawnpoints.lua`), { b: fs.readFileSync(path.join(templatePath, "template_spawnpoints.lua")), d: {} })
-    serverFiles.set(path.join(distPath, "server-config", `${props.serverName}_spawnregions.lua`), { b: fs.readFileSync(path.join(templatePath, "template_spawnregions.lua")), d: {} })
-    serverFiles.set(path.join(distPath, "server-config", `${props.serverName}.ini`,), { b: fs.readFileSync(path.join(templatePath, "template_server.ini")), d: {} })
-    serverFiles.set(path.join(distPath, `${props.serverName}.service`,), { b: fs.readFileSync(path.join(templatePath, "template_service.service")), d: data })
+    serverFiles.set(path.join(DIST_DIR, "server-config", `${props.serverName}_SandboxVars.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_SandboxVars.lua`), d: {} })
+    serverFiles.set(path.join(DIST_DIR, "server-config", `${props.serverName}_spawnpoints.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_spawnpoints.lua`), d: {} })
+    serverFiles.set(path.join(DIST_DIR, "server-config", `${props.serverName}_spawnregions.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_spawnregions.lua`), d: {} })
 
+    // Only this unit file supports templates
+    serverFiles.set(path.join(DIST_DIR, "server-config", `${props.serverName}.ini`,), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_server.ini`), d: serverFileConfig })
+    serverFiles.set(path.join(DIST_DIR, `${props.serverName}.service`,), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_service.service`), d: unitFileConfig })
 
     const setupCommands = ec2.UserData.forLinux();
     setupCommands.addCommands(
@@ -78,19 +95,22 @@ export class GameServerStack extends Construct implements ITaggable {
     this.userData = new ec2.MultipartUserData;
     this.userData.addUserDataPart(setupCommands, "", true);
 
+    // 
+    // This builds the configs and writes to the dist dir
+    // 
     let config = logic.buildServerConfig(
       this.userData,
       serverFiles,
-      props.serverName
+      props.serverName,
     );
 
     const s3UnitFile = new Asset(this, "pz-unit-file", {
-      path: path.join(distPath, `${props.serverName}.service`),
+      path: path.join(DIST_DIR, `${props.serverName}.service`),
     });
     s3UnitFile.grantRead(props.role);
 
     const s3ConfigDir = new Asset(this, "pz-config-dir", {
-      path: path.join(distPath, "server-config"),
+      path: path.join(DIST_DIR, "server-config"),
     });
     s3ConfigDir.grantRead(props.role);
 
@@ -180,7 +200,7 @@ export class GameServerStack extends Construct implements ITaggable {
 
     // Add a hosted zone, each game is one server, one subdomain, plan accordingly
     const pzHZ = new r53.PublicHostedZone(this, "HostedZoneDev", {
-      zoneName: ctx['envkey']['subdomain'] + "." + props.hz.zoneName,
+      zoneName: ctx['env']['subdomain'] + "." + props.hz.zoneName,
     });
 
     new r53.ARecord(this, "PzARecordB", {

@@ -25,14 +25,6 @@ export function buildServerConfig(
     writeFileFromTemplate(k, tmpl.b, tmpl.d)
   })
 
-  // let updateDebian: string[] = [
-  //   `echo "---- Update OS"`,
-  //   `sudo add-apt-repository multiverse`,
-  //   `sudo dpkg --add-architecture i386`,
-  //   `sudo apt update`,
-  //   `sudo apt install -y lib32gcc1 libsdl2-2.0-0:i386 docker.io awscli unzip`
-  // ];
-
   let addUsers: string[] = [
     `echo "---- Add users"`,
     `sudo usermod -aG docker ubuntu`,
@@ -82,9 +74,11 @@ export function writeFileFromTemplate(path: string, template: Buffer, data: Data
 
 // parseMods is a helper for generating two arrays, one a list of mods, and the
 // other a list of mod ids which match their partner in the other list
-function parseMods(modFile: Array<string>, modsNamesArray: Array<string>, workshopIDArray: Array<string>) {
+export function parseMods(modFile: Buffer): { mods: Array<string>, ids: Array<string> } {
 
   var modInstallArray = Array<string>();
+  var ids = Array<string>()
+  var mods = Array<string>()
   modFile === undefined ? null : modInstallArray = modFile.toString().split("\n");
 
   // Populate arrays from source
@@ -94,7 +88,12 @@ function parseMods(modFile: Array<string>, modsNamesArray: Array<string>, worksh
     // This is actually unused, see below
     let modConfig = v.split(/\s+/)
     // steamcmdMods[i] = `+workshop_download_item 380870 ${modConfig[0]}`
-    workshopIDArray.push(`${modConfig[0]}`)
-    modsNamesArray.push(`${modConfig[1]}`)
+    ids.push(`${modConfig[0]}`)
+    mods.push(`${modConfig[1]}`)
   });
+
+  return {
+    mods,
+    ids,
+  }
 }
