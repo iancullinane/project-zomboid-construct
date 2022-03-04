@@ -12,17 +12,25 @@ import * as r53 from "aws-cdk-lib/aws-route53";
 import * as logic from "./logic/server-config"
 import { ZomboidAccess } from "./components/zomboid-access"
 
-const TEMPLATE_DIR = path.join(__dirname, "..", "assets",)
-const DIST_DIR = path.join(process.cwd(), "assets")
+const TEMPLATE_DIR = path.join(__dirname, "..", "assets", "templates")
+const DIST_DIR = path.join(process.cwd(), "assets", "dist")
 
 path.join(process.cwd(), "assets")
 export interface GameServerProps {
+  cfg: ServerConfig,
   role: iam.IRole,
   vpc: ec2.IVpc,
   sg: ec2.ISecurityGroup,
   hz: r53.IHostedZone,
   serverName?: string,
   modFile?: Buffer,
+}
+
+export interface ServerConfig {
+  region: string,
+  ami: string,
+  subdomain: string,
+  servername: string,
 }
 
 export class GameServerStack extends Construct implements ITaggable {
@@ -39,9 +47,8 @@ export class GameServerStack extends Construct implements ITaggable {
 
     // todo::this feels like kind of a hacky way to set these values, I am not
     // sure context is meant for this kind of work
-    const ctx = this.node.tryGetContext('environment')
     const machineImage = ec2.MachineImage.genericLinux({
-      "us-east-1": ctx['env']['ami'], // Ubuntu xenial us-east-1 LTS
+      "us-east-1": props.cfg.ami, // Ubuntu xenial us-east-1 LTS
     });
 
     // This file and path stuff is really ugly but I don't know TS well enough...
@@ -200,7 +207,7 @@ export class GameServerStack extends Construct implements ITaggable {
 
     // Add a hosted zone, each game is one server, one subdomain, plan accordingly
     const pzHZ = new r53.PublicHostedZone(this, "HostedZoneDev", {
-      zoneName: ctx['env']['subdomain'] + "." + props.hz.zoneName,
+      zoneName: props.cfg.subdomain + "." + props.hz.zoneName,
     });
 
     new r53.ARecord(this, "PzARecordB", {
@@ -212,7 +219,7 @@ export class GameServerStack extends Construct implements ITaggable {
     // todo::This can probably be a downstream lookup
     new r53.NsRecord(this, "NsForParentDomain", {
       zone: props.hz,
-      recordName: ctx['env']['subdomain'] + `${props.serverName}.com`,
+      recordName: props.cfg.subdomain + `${props.serverName}.com`,
       values: pzHZ.hostedZoneNameServers!, // exclamation is like, hey it might be null but no: https://stackoverflow.com/questions/54496398/typescript-type-string-undefined-is-not-assignable-to-type-string
     });
 
