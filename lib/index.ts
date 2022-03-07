@@ -24,6 +24,7 @@ export interface GameServerProps {
   hz: r53.IHostedZone,
   serverName?: string,
   modFile?: Buffer,
+  instanceType?: string
 }
 
 export interface ServerConfig {
@@ -41,9 +42,8 @@ export class GameServerStack extends Construct implements ITaggable {
   constructor(scope: Construct, id: string, props: GameServerProps) {
     super(scope, id);
 
-    if (props.serverName === undefined) {
-      props.serverName = "servertest";
-    }
+    props.serverName === undefined ? props.serverName = "servertest" : null;
+    props.instanceType === undefined ? props.instanceType = "t2.micro" : null;
 
     // todo::this feels like kind of a hacky way to set these values, I am not
     // sure context is meant for this kind of work
@@ -152,7 +152,7 @@ export class GameServerStack extends Construct implements ITaggable {
 
     // ---- Start server
     const instance = new ec2.Instance(this, "project-zomboid-ec2", {
-      instanceType: new ec2.InstanceType("t2.medium"),
+      instanceType: new ec2.InstanceType(props.instanceType),
       machineImage: machineImage,
       vpc: props.vpc,
       keyName: "pz-mac",
