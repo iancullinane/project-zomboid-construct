@@ -215,23 +215,23 @@ export class GameServerStack extends Construct implements ITaggable {
     // add the pz ingress rules
     instance.addSecurityGroup(zomboidServerSg);
 
-    // Add a hosted zone, each game is one server, one subdomain, plan accordingly
-    const pzHZ = new r53.PublicHostedZone(this, "HostedZoneDev", {
-      zoneName: props.cfg.subdomain + "." + props.hz.zoneName,
-    });
+    // // Add a hosted zone, each game is one server, one subdomain, plan accordingly
+    // const pzHZ = new r53.PublicHostedZone(this, "HostedZoneDev", {
+    //   zoneName: props.cfg.subdomain + "." + props.hz.zoneName,
+    // });
 
     new r53.ARecord(this, "PzARecordB", {
-      zone: pzHZ,
+      zone: props.hz,
       target: r53.RecordTarget.fromIpAddresses(instance.instancePublicIp),
     });
 
 
-    // todo::This can probably be a downstream lookup
-    new r53.NsRecord(this, "NsForParentDomain", {
-      zone: props.hz,
-      recordName: props.cfg.subdomain + '.' + `${props.serverName}.com`,
-      values: pzHZ.hostedZoneNameServers!, // exclamation is like, hey it might be null but no: https://stackoverflow.com/questions/54496398/typescript-type-string-undefined-is-not-assignable-to-type-string
-    });
+    // // todo::This can probably be a downstream lookup
+    // new r53.NsRecord(this, "NsForParentDomain", {
+    //   zone: props.hz,
+    //   recordName: props.cfg.subdomain + '.' + `${props.serverName}.com`,
+    //   values: pzHZ.hostedZoneNameServers!, // exclamation is like, hey it might be null but no: https://stackoverflow.com/questions/54496398/typescript-type-string-undefined-is-not-assignable-to-type-string
+    // });
 
     // Create outputs for connecting
     new CfnOutput(this, "IP Address", {
