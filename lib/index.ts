@@ -32,7 +32,16 @@ export interface ServerConfig {
   ami: string,
   subdomain: string,
   servername: string,
+  instancetype: string,
 }
+
+const amimap: Record<string, string> = {
+  "us-east-2": "ami-0c15a71461028f685",
+  "us-east-1": "ami-0f5513ad02f8d23ed",
+}
+
+// const amimap = new Record<string, string>([
+// ]);
 
 export class GameServerStack extends Construct implements ITaggable {
 
@@ -42,14 +51,14 @@ export class GameServerStack extends Construct implements ITaggable {
   constructor(scope: Construct, id: string, props: GameServerProps) {
     super(scope, id);
 
-    props.serverName === undefined ? props.serverName = "servertest" : null;
-    props.instanceType === undefined ? props.instanceType = "t2.micro" : null;
+
+    let region = props.cfg.region
+    props.cfg.servername === undefined ? props.serverName = "servertest" : null;
+    props.cfg.instancetype === undefined ? props.instanceType = "t2.micro" : null;
 
     // todo::this feels like kind of a hacky way to set these values, I am not
     // sure context is meant for this kind of work
-    const machineImage = ec2.MachineImage.genericLinux({
-      "us-east-1": props.cfg.ami, // Ubuntu xenial us-east-1 LTS
-    });
+    const machineImage = ec2.MachineImage.genericLinux(amimap);
 
     // This file and path stuff is really ugly but I don't know TS well enough...
 
@@ -88,7 +97,7 @@ export class GameServerStack extends Construct implements ITaggable {
 
     // Only this unit file supports templates
     serverFiles.set(path.join(DIST_DIR, "server-config", `${props.serverName}.ini`,), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_server.ini`), d: serverFileConfig })
-    serverFiles.set(path.join(DIST_DIR, `${props.serverName}.service`,), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_service.service`), d: unitFileConfig })
+    serverFiles.set(path.join(DIST_DIR, `${props.serverName}.service`,), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_service.service`), d: serverFileConfig })
 
     const setupCommands = ec2.UserData.forLinux();
     setupCommands.addCommands(
@@ -152,7 +161,7 @@ export class GameServerStack extends Construct implements ITaggable {
 
     // ---- Start server
     const instance = new ec2.Instance(this, "project-zomboid-ec2", {
-      instanceType: new ec2.InstanceType(props.instanceType),
+      instanceType: new ec2.InstanceType(props.cfg.instancetype),
       machineImage: machineImage,
       vpc: props.vpc,
       keyName: "pz-mac",
