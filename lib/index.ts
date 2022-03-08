@@ -22,6 +22,7 @@ export interface GameServerProps {
   vpc: ec2.IVpc,
   sg: ec2.ISecurityGroup,
   hz: r53.IHostedZone,
+  keyName: string;
   serverName?: string,
   modFile?: Buffer,
   instanceType?: string
@@ -165,7 +166,7 @@ export class GameServerStack extends Construct implements ITaggable {
       instanceType: new ec2.InstanceType(props.cfg.instancetype),
       machineImage: machineImage,
       vpc: props.vpc,
-      keyName: "pz-mac",
+      keyName: props.keyName,
       securityGroup: props.sg,
       role: props.role,
       userData: this.userData,
