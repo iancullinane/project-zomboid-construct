@@ -74,13 +74,21 @@ export class GameServerStack extends Construct implements ITaggable {
 
     // This project includes `template-file` but at this commit only the
     // project unit file is making use of it: https://www.npmjs.com/package/template-file
+    // const unitFileConfig = {
+    //   config: {
+    //     servername: props.serverName,
+    //     adminPW: "PasswordXYZ",
+    //     cachedir: "/home/steam/pz"
+    //   }
+    // };
+
     const unitFileConfig = {
       config: {
-        servername: props.serverName,
+        servername: props.cfg.servername,
         adminPW: "PasswordXYZ",
         cachedir: "/home/steam/pz"
       }
-    };
+    }
 
     let { mods, ids } = logic.parseMods(props.modFile!)
     const serverFileConfig = {
@@ -88,7 +96,6 @@ export class GameServerStack extends Construct implements ITaggable {
         mods: mods.join(";"),
         ids: ids.join(";"),
       }
-
     }
     // The key is the destination of the files, the object in the second 
     // argument is the Buffer with the template, and the data object with any
@@ -99,7 +106,7 @@ export class GameServerStack extends Construct implements ITaggable {
 
     // Only this unit file supports templates
     serverFiles.set(path.join(DIST_DIR, "server-config", `${props.serverName}.ini`,), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_server.ini`), d: serverFileConfig })
-    serverFiles.set(path.join(DIST_DIR, `${props.serverName}.service`,), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_service.service`), d: serverFileConfig })
+    serverFiles.set(path.join(DIST_DIR, `${props.serverName}.service`,), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_service.service`), d: unitFileConfig })
 
     const setupCommands = ec2.UserData.forLinux();
     setupCommands.addCommands(
@@ -242,7 +249,7 @@ export class GameServerStack extends Construct implements ITaggable {
     // Create outputs for connecting
     new CfnOutput(this, "IP Address", {
       value: instance.instancePublicIp,
-      exportName: "PublicIPAddress"
+      exportName: "IPAddress"
     });
 
     //   // Configure the `natGatewayProvider` when defining a Vpc
