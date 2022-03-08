@@ -228,7 +228,7 @@ export class GameServerStack extends Construct implements ITaggable {
 
     new r53.ARecord(this, "PzARecordB", {
       zone: props.hz,
-      target: r53.RecordTarget.fromIpAddresses(instance.instancePrivateIp),
+      target: r53.RecordTarget.fromIpAddresses(instance.instancePublicIp),
     });
 
 
@@ -242,7 +242,7 @@ export class GameServerStack extends Construct implements ITaggable {
     // Create outputs for connecting
     new CfnOutput(this, "IP Address", {
       value: instance.instancePublicIp,
-      exportName: "IPAddress"
+      exportName: "PublicIPAddress"
     });
 
     //   // Configure the `natGatewayProvider` when defining a Vpc
