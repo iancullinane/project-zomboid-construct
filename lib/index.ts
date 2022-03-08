@@ -166,12 +166,17 @@ export class GameServerStack extends Construct implements ITaggable {
       instanceType: new ec2.InstanceType(props.cfg.instancetype),
       machineImage: machineImage,
       vpc: props.vpc,
+      vpcSubnets: {
+        subnetType: ec2.SubnetType.PUBLIC,
+      },
       keyName: props.keyName,
       securityGroup: props.sg,
       role: props.role,
       userData: this.userData,
     });
     Tags.of(instance).add("game", "projectzomboid");
+
+
 
     // Holder for pz sg's
     // todo::nested?
