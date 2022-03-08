@@ -33,6 +33,7 @@ export interface ServerConfig {
   subdomain: string,
   servername: string,
   instancetype: string,
+  hostedzoneid: string,
 }
 
 const amimap: Record<string, string> = {
