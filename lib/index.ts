@@ -223,7 +223,7 @@ export class GameServerStack extends Construct implements ITaggable {
 
     new r53.ARecord(this, "PzARecordB", {
       zone: props.hz,
-      target: r53.RecordTarget.fromIpAddresses(instance.instancePublicIp),
+      target: r53.RecordTarget.fromIpAddresses(instance.instancePrivateIp),
     });
 
 
