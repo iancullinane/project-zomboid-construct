@@ -23,20 +23,31 @@ The stack will provide the following:
 
 ***Note***: As of this commit access is provided by IP address ingress rules. This will remain until I finish the networking portion.
 
-### Context
+### Config Props
 
-Package provide custom stack props in the following form:
+This is all messy from dev, I will clean it up later, but you need to provide the `GameServerProps` interface, which includes a `ServerConfig` interface...sorry
 
 ---
 ```markdown
 export interface GameServerProps {
-  cfg: ServerConfig, // Currently unused, is little more than a UserData shim
+  cfg: ServerConfig,
   role: iam.IRole,
   vpc: ec2.IVpc,
   sg: ec2.ISecurityGroup,
   hz: r53.IHostedZone,
+  keyName: string;
   serverName?: string,
   modFile?: Buffer,
+  instanceType?: string
+}
+
+export interface ServerConfig {
+  region: string,
+  ami: string,
+  subdomain: string,
+  servername: string,
+  instancetype: string,
+  hostedzoneid: string,
 }
 ```
 ---
@@ -76,5 +87,4 @@ A future update will allow for a list of custom mods. This file must be in a cer
 
 ```
 ---
-
 Altogetehr after dpeloy a player would be able to use `sub.example.com` on port `16261` and `8766` as well as necessary ports for Steam.
