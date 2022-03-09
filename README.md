@@ -53,7 +53,7 @@ export interface ServerConfig {
 ---
 ### modFile
 
-A future update will allow for a list of custom mods. This file must be in a certain format (below) to be properly parsed. Currently this pacakge has the following `mods.txt` file embedded. If you want to change it. Mods are included in ther `server.ini` file:
+You can provide a list of mods. Place a file called `mods.txt` in `assets/` to load it. Otherwise the below modlist will be used. This file must be in a certain format (below) to be properly parsed. Currently this pacakge has the following `mods.txt` file embedded. If you want to change it. Mods are included in ther `server.ini` file:
 
 ---
 ```markdown
@@ -87,4 +87,4 @@ A future update will allow for a list of custom mods. This file must be in a cer
 
 ```
 ---
-Altogetehr after dpeloy a player would be able to use `sub.example.com` on port `16261` and `8766` as well as necessary ports for Steam.
+Altogether after deploy a player would be able to use `sub.example.com` on port `16261` and `8766` as well as necessary ports for Steam.
