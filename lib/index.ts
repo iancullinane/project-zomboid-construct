@@ -29,9 +29,9 @@ export interface ServerConfig {
   ami: string,
   keyName: string;
   servername?: string,
+  hostedzoneid: string;
   subdomain?: string,
   instancetype?: string,
-  serverName?: string,
   modFile?: Buffer,
   public?: Boolean;
   fresh?: boolean,
@@ -54,7 +54,7 @@ export class GameServerStack extends Construct implements ITaggable {
     super(scope, id);
 
     // Ensure some values
-    props.cfg.servername === undefined ? props.cfg.serverName = "servertest" : null;
+    props.cfg.servername === undefined ? props.cfg.servername = "servertest" : null;
     props.cfg.instancetype === undefined ? props.cfg.instancetype = "t2.micro" : null;
     props.cfg.fresh === undefined ? props.cfg.fresh = false : null;
 
@@ -82,13 +82,13 @@ export class GameServerStack extends Construct implements ITaggable {
     // The key is the destination of the files, the object in the second 
     // argument is the Buffer with the template, and the data object with any
     // replacements, currently the unit file is the only "real" template
-    serverFiles.set(path.join(DIST_DIR, "server-config", `${props.cfg.serverName}_SandboxVars.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_SandboxVars.lua`), d: {} })
-    serverFiles.set(path.join(DIST_DIR, "server-config", `${props.cfg.serverName}_spawnpoints.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_spawnpoints.lua`), d: {} })
-    serverFiles.set(path.join(DIST_DIR, "server-config", `${props.cfg.serverName}_spawnregions.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_spawnregions.lua`), d: {} })
+    serverFiles.set(path.join(DIST_DIR, "server-config", `${props.cfg.servername}_SandboxVars.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_SandboxVars.lua`), d: {} })
+    serverFiles.set(path.join(DIST_DIR, "server-config", `${props.cfg.servername}_spawnpoints.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_spawnpoints.lua`), d: {} })
+    serverFiles.set(path.join(DIST_DIR, "server-config", `${props.cfg.servername}_spawnregions.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_spawnregions.lua`), d: {} })
 
     // Only this unit file supports templates
-    serverFiles.set(path.join(DIST_DIR, "server-config", `${props.cfg.serverName}.ini`,), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_server.ini`), d: serverFileConfig })
-    serverFiles.set(path.join(DIST_DIR, `${props.cfg.serverName}.service`,), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_service.service`), d: unitFileConfig })
+    serverFiles.set(path.join(DIST_DIR, "server-config", `${props.cfg.servername}.ini`,), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_server.ini`), d: serverFileConfig })
+    serverFiles.set(path.join(DIST_DIR, `${props.cfg.servername}.service`,), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_service.service`), d: unitFileConfig })
 
     const setupCommands = ec2.UserData.forLinux();
     setupCommands.addCommands(
@@ -111,7 +111,7 @@ export class GameServerStack extends Construct implements ITaggable {
     );
 
     const s3UnitFile = new Asset(this, "pz-unit-file", {
-      path: path.join(DIST_DIR, `${props.cfg.serverName}.service`),
+      path: path.join(DIST_DIR, `${props.cfg.servername}.service`),
     });
     s3UnitFile.grantRead(props.role);
 
@@ -133,16 +133,16 @@ export class GameServerStack extends Construct implements ITaggable {
     this.userData.addS3DownloadCommand({
       bucket: s3UnitFile.bucket!,
       bucketKey: s3UnitFile.s3ObjectKey!,
-      localFile: `/etc/systemd/system/${props.cfg.serverName}.service`,
+      localFile: `/etc/systemd/system/${props.cfg.servername}.service`,
     });
 
     // Place, enable, and start the service
     this.userData.addCommands(
       `mkdir -p /home/steam/pz/Server/`, // Just in case
       `unzip /home/steam/files/${s3ConfigDir.s3ObjectKey} -d /home/steam/pz/Server/`,
-      `chmod +x /etc/systemd/system/${props.cfg.serverName}`,
-      `systemctl enable ${props.cfg.serverName}.service`,
-      `systemctl start ${props.cfg.serverName}.service`,
+      `chmod +x /etc/systemd/system/${props.cfg.servername}`,
+      `systemctl enable ${props.cfg.servername}.service`,
+      `systemctl start ${props.cfg.servername}.service`,
     );
 
     props.role.addManagedPolicy(
@@ -219,7 +219,7 @@ export class GameServerStack extends Construct implements ITaggable {
       // todo::This can probably be a downstream lookup
       new r53.NsRecord(this, "NsForParentDomain", {
         zone: props.hz,
-        recordName: props.cfg.subdomain + '.' + `${props.cfg.serverName}.com`,
+        recordName: props.cfg.subdomain + '.' + `${props.cfg.servername}.com`,
         values: pzHz.hostedZoneNameServers!, // exclamation is like, hey it might be null but no: https://stackoverflow.com/questions/54496398/typescript-type-string-undefined-is-not-assignable-to-type-string
       });
     } else {
