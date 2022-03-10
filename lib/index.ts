@@ -22,19 +22,19 @@ export interface GameServerProps {
   vpc: ec2.IVpc,
   sg: ec2.ISecurityGroup,
   hz: r53.IHostedZone,
-  keyName: string;
-  serverName?: string,
-  modFile?: Buffer,
-  instanceType?: string
 }
 
 export interface ServerConfig {
   region: string,
   ami: string,
-  subdomain: string,
-  servername: string,
-  instancetype: string,
-  hostedzoneid: string,
+  keyName: string;
+  servername?: string,
+  subdomain?: string,
+  instancetype?: string,
+  serverName?: string,
+  modFile?: Buffer,
+  public?: Boolean;
+  fresh?: boolean,
 }
 
 const amimap: Record<string, string> = {
@@ -53,60 +53,42 @@ export class GameServerStack extends Construct implements ITaggable {
   constructor(scope: Construct, id: string, props: GameServerProps) {
     super(scope, id);
 
+    // Ensure some values
+    props.cfg.servername === undefined ? props.cfg.serverName = "servertest" : null;
+    props.cfg.instancetype === undefined ? props.cfg.instancetype = "t2.micro" : null;
+    props.cfg.fresh === undefined ? props.cfg.fresh = false : null;
 
-    let region = props.cfg.region
-    props.cfg.servername === undefined ? props.serverName = "servertest" : null;
-    props.cfg.instancetype === undefined ? props.instanceType = "t2.micro" : null;
-
-    // todo::this feels like kind of a hacky way to set these values, I am not
-    // sure context is meant for this kind of work
     const machineImage = ec2.MachineImage.genericLinux(amimap);
-
-    // This file and path stuff is really ugly but I don't know TS well enough...
-
-    //::todo either provide data for various templates, or provide the consumer
-    // a method to pass their own files (or both), for now always load from the
-    // base construct templates
-
-
-
-    let serverFiles = new Map<string, logic.TemplateBuilder>()
-
-    // This project includes `template-file` but at this commit only the
-    // project unit file is making use of it: https://www.npmjs.com/package/template-file
-    // const unitFileConfig = {
-    //   config: {
-    //     servername: props.serverName,
-    //     adminPW: "PasswordXYZ",
-    //     cachedir: "/home/steam/pz"
-    //   }
-    // };
+    let serverFiles = new Map<string, logic.TemplateBuilder>();
 
     const unitFileConfig = {
       config: {
-        servername: props.cfg.servername,
+        servername: props.cfg.servername!,
         adminPW: "PasswordXYZ",
         cachedir: "/home/steam/pz"
       }
     }
 
-    let { mods, ids } = logic.parseMods(props.modFile!)
-    const serverFileConfig = {
-      config: {
-        mods: mods.join(";"),
-        ids: ids.join(";"),
+    let serverFileConfig = {}
+    if (props.cfg.modFile !== null) {
+      let { mods, ids } = logic.parseMods(props.cfg.modFile!)
+      serverFileConfig = {
+        config: {
+          mods: mods.join(";"),
+          ids: ids.join(";"),
+        }
       }
     }
     // The key is the destination of the files, the object in the second 
     // argument is the Buffer with the template, and the data object with any
     // replacements, currently the unit file is the only "real" template
-    serverFiles.set(path.join(DIST_DIR, "server-config", `${props.serverName}_SandboxVars.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_SandboxVars.lua`), d: {} })
-    serverFiles.set(path.join(DIST_DIR, "server-config", `${props.serverName}_spawnpoints.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_spawnpoints.lua`), d: {} })
-    serverFiles.set(path.join(DIST_DIR, "server-config", `${props.serverName}_spawnregions.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_spawnregions.lua`), d: {} })
+    serverFiles.set(path.join(DIST_DIR, "server-config", `${props.cfg.serverName}_SandboxVars.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_SandboxVars.lua`), d: {} })
+    serverFiles.set(path.join(DIST_DIR, "server-config", `${props.cfg.serverName}_spawnpoints.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_spawnpoints.lua`), d: {} })
+    serverFiles.set(path.join(DIST_DIR, "server-config", `${props.cfg.serverName}_spawnregions.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_spawnregions.lua`), d: {} })
 
     // Only this unit file supports templates
-    serverFiles.set(path.join(DIST_DIR, "server-config", `${props.serverName}.ini`,), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_server.ini`), d: serverFileConfig })
-    serverFiles.set(path.join(DIST_DIR, `${props.serverName}.service`,), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_service.service`), d: unitFileConfig })
+    serverFiles.set(path.join(DIST_DIR, "server-config", `${props.cfg.serverName}.ini`,), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_server.ini`), d: serverFileConfig })
+    serverFiles.set(path.join(DIST_DIR, `${props.cfg.serverName}.service`,), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_service.service`), d: unitFileConfig })
 
     const setupCommands = ec2.UserData.forLinux();
     setupCommands.addCommands(
@@ -123,14 +105,13 @@ export class GameServerStack extends Construct implements ITaggable {
     // 
     // This builds the configs and writes to the dist dir
     // 
-    let config = logic.buildServerConfig(
+    logic.buildServerConfig(
       this.userData,
       serverFiles,
-      props.serverName,
     );
 
     const s3UnitFile = new Asset(this, "pz-unit-file", {
-      path: path.join(DIST_DIR, `${props.serverName}.service`),
+      path: path.join(DIST_DIR, `${props.cfg.serverName}.service`),
     });
     s3UnitFile.grantRead(props.role);
 
@@ -152,16 +133,16 @@ export class GameServerStack extends Construct implements ITaggable {
     this.userData.addS3DownloadCommand({
       bucket: s3UnitFile.bucket!,
       bucketKey: s3UnitFile.s3ObjectKey!,
-      localFile: `/etc/systemd/system/${props.serverName}.service`,
+      localFile: `/etc/systemd/system/${props.cfg.serverName}.service`,
     });
 
     // Place, enable, and start the service
     this.userData.addCommands(
       `mkdir -p /home/steam/pz/Server/`, // Just in case
       `unzip /home/steam/files/${s3ConfigDir.s3ObjectKey} -d /home/steam/pz/Server/`,
-      `chmod +x /etc/systemd/system/${props.serverName}`,
-      `systemctl enable ${props.serverName}.service`,
-      `systemctl start ${props.serverName}.service`,
+      `chmod +x /etc/systemd/system/${props.cfg.serverName}`,
+      `systemctl enable ${props.cfg.serverName}.service`,
+      `systemctl start ${props.cfg.serverName}.service`,
     );
 
     props.role.addManagedPolicy(
@@ -174,14 +155,14 @@ export class GameServerStack extends Construct implements ITaggable {
       machineImage: machineImage,
       vpc: props.vpc,
       vpcSubnets: {
-        subnetType: ec2.SubnetType.PUBLIC,
+        subnetType: props.cfg.public === true || undefined ? ec2.SubnetType.PUBLIC : ec2.SubnetType.PRIVATE_WITH_NAT,
       },
-      keyName: props.keyName,
+      keyName: props.cfg.keyName,
       securityGroup: props.sg,
       role: props.role,
       userData: this.userData,
     });
-    Tags.of(instance).add("game", "projectzomboid");
+    Tags.of(instance).add("game", `pz-${props.cfg.servername}`);
 
 
 
@@ -228,13 +209,25 @@ export class GameServerStack extends Construct implements ITaggable {
     // add the pz ingress rules
     instance.addSecurityGroup(zomboidServerSg);
 
-    // // Add a hosted zone, each game is one server, one subdomain, plan accordingly
-    // const pzHZ = new r53.PublicHostedZone(this, "HostedZoneDev", {
-    //   zoneName: props.cfg.subdomain + "." + props.hz.zoneName,
-    // });
+    // If a subdomain is provided, create and use it
+    // warning: will fail if trying to use twice
+    let pzHz: r53.IPublicHostedZone;
+    if (props.cfg.subdomain) {
+      pzHz = new r53.PublicHostedZone(this, "HostedZoneDev", {
+        zoneName: props.cfg.subdomain + "." + props.hz.zoneName,
+      });
+      // todo::This can probably be a downstream lookup
+      new r53.NsRecord(this, "NsForParentDomain", {
+        zone: props.hz,
+        recordName: props.cfg.subdomain + '.' + `${props.cfg.serverName}.com`,
+        values: pzHz.hostedZoneNameServers!, // exclamation is like, hey it might be null but no: https://stackoverflow.com/questions/54496398/typescript-type-string-undefined-is-not-assignable-to-type-string
+      });
+    } else {
+      pzHz = props.hz;
+    }
 
     new r53.ARecord(this, "PzARecordB", {
-      zone: props.hz,
+      zone: pzHz!,
       target: r53.RecordTarget.fromIpAddresses(instance.instancePublicIp),
     });
 
@@ -242,7 +235,7 @@ export class GameServerStack extends Construct implements ITaggable {
     // // todo::This can probably be a downstream lookup
     // new r53.NsRecord(this, "NsForParentDomain", {
     //   zone: props.hz,
-    //   recordName: props.cfg.subdomain + '.' + `${props.serverName}.com`,
+    //   recordName: props.cfg.subdomain + '.' + `${props.cfg.serverName}.com`,
     //   values: pzHZ.hostedZoneNameServers!, // exclamation is like, hey it might be null but no: https://stackoverflow.com/questions/54496398/typescript-type-string-undefined-is-not-assignable-to-type-string
     // });
 

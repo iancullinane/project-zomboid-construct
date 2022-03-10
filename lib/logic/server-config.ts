@@ -16,8 +16,7 @@ export interface TemplateBuilder {
 
 export function buildServerConfig(
   userData: ec2.UserData,
-  serverConfig: Map<string, TemplateBuilder>,
-  serverName?: string): Config {
+  serverConfig: Map<string, TemplateBuilder>): Config {
 
   // Write the templates
   // todo::interface configs into data and be clever
