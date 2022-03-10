@@ -219,7 +219,7 @@ export class GameServerStack extends Construct implements ITaggable {
       // todo::This can probably be a downstream lookup
       new r53.NsRecord(this, "NsForParentDomain", {
         zone: props.hz,
-        recordName: props.cfg.subdomain + '.' + `${props.cfg.servername}.com`,
+        recordName: pzHz.zoneName,
         values: pzHz.hostedZoneNameServers!, // exclamation is like, hey it might be null but no: https://stackoverflow.com/questions/54496398/typescript-type-string-undefined-is-not-assignable-to-type-string
       });
     } else {
