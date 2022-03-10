@@ -242,7 +242,7 @@ export class GameServerStack extends Construct implements ITaggable {
     // Create outputs for connecting
     new CfnOutput(this, `IP Address-${props.cfg.servername}`, {
       value: instance.instancePublicIp,
-      exportName: "IPAddress"
+      exportName: `${props.cfg.servername}-IP-Address`
     });
 
     //   // Configure the `natGatewayProvider` when defining a Vpc
