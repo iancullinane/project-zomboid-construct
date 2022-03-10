@@ -240,7 +240,7 @@ export class GameServerStack extends Construct implements ITaggable {
     // });
 
     // Create outputs for connecting
-    new CfnOutput(this, "IP Address", {
+    new CfnOutput(this, `IP Address-${props.cfg.servername}`, {
       value: instance.instancePublicIp,
       exportName: "IPAddress"
     });
