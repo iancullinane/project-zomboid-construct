@@ -9,6 +9,8 @@ export interface Config {
   userData: ec2.UserData
 }
 
+// TemplateBuilder is a Buffer holding a template file, and a data object to 
+// hold its values for replacement
 export interface TemplateBuilder {
   b: Buffer,
   d: Data,
@@ -62,7 +64,6 @@ export function writeFileFromTemplate(path: string, template: Buffer, data: Data
   let rendered = render(template.toString(), data);
   fs.writeFile(path, rendered, (err) => {
     if (err) throw err;
-    console.log(`Rendered and wrote ${path}`);
   });
 }
 

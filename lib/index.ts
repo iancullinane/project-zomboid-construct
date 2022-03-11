@@ -37,6 +37,7 @@ export interface ServerConfig {
   fresh?: boolean,
 }
 
+// Ubuntu 20.04 LTS
 const amimap: Record<string, string> = {
   "us-east-2": "ami-0c15a71461028f685",
   "us-east-1": "ami-0f5513ad02f8d23ed",
@@ -69,7 +70,7 @@ export class GameServerStack extends Construct implements ITaggable {
       }
     }
 
-    let serverFileConfig = {}
+    let serverFileConfig = {};
     if (props.cfg.modFile !== null) {
       let { mods, ids } = logic.parseMods(props.cfg.modFile!)
       serverFileConfig = {
@@ -140,7 +141,7 @@ export class GameServerStack extends Construct implements ITaggable {
     this.userData.addCommands(
       `mkdir -p /home/steam/pz/Server/`, // Just in case
       `unzip /home/steam/files/${s3ConfigDir.s3ObjectKey} -d /home/steam/pz/Server/`,
-      `chmod +x /etc/systemd/system/${props.cfg.servername}`,
+      `chmod +x /etc/systemd/system/${props.cfg.servername}.service`,
       `systemctl enable ${props.cfg.servername}.service`,
       `systemctl start ${props.cfg.servername}.service`,
     );
@@ -231,13 +232,6 @@ export class GameServerStack extends Construct implements ITaggable {
       target: r53.RecordTarget.fromIpAddresses(instance.instancePublicIp),
     });
 
-
-    // // todo::This can probably be a downstream lookup
-    // new r53.NsRecord(this, "NsForParentDomain", {
-    //   zone: props.hz,
-    //   recordName: props.cfg.subdomain + '.' + `${props.cfg.serverName}.com`,
-    //   values: pzHZ.hostedZoneNameServers!, // exclamation is like, hey it might be null but no: https://stackoverflow.com/questions/54496398/typescript-type-string-undefined-is-not-assignable-to-type-string
-    // });
 
     // Create outputs for connecting
     new CfnOutput(this, `IP Address-${props.cfg.servername}`, {
