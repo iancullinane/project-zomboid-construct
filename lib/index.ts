@@ -111,6 +111,9 @@ export class GameServerStack extends Construct implements ITaggable {
       serverFiles,
     );
 
+    console.log(`${props.cfg.servername}.service`)
+    console.log(path.join(DIST_DIR, `${props.cfg.servername}.service`))
+
     const s3UnitFile = new Asset(this, "pz-unit-file", {
       path: path.join(DIST_DIR, `${props.cfg.servername}.service`),
     });

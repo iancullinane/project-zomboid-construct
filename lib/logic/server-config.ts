@@ -1,6 +1,7 @@
 // This could or maybe should be its own package, but for simplicity and because
 // this is for personal user, I am leaving it here
 import * as fs from "fs";
+const fsPromises = fs.promises;
 
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import { render, Data } from "template-file"
@@ -58,13 +59,27 @@ export function buildServerConfig(
 
 }
 
+
+async function listDir() {
+  try {
+    return fsPromises.readdir('path/to/dir');
+  } catch (err) {
+    console.error('Error occured while reading directory!', err);
+  }
+}
+
+listDir();
+
+
 // writeFileFromTemplate takes a path (should be your dist path) and renders
 // a template from the buffer and data
-export function writeFileFromTemplate(path: string, template: Buffer, data: Data) {
+export async function writeFileFromTemplate(path: string, template: Buffer, data: Data) {
   let rendered = render(template.toString(), data);
-  fs.writeFile(path, rendered, (err) => {
-    if (err) throw err;
-  });
+  try {
+    fsPromises.writeFile(path, rendered);
+  } catch (err) {
+    console.log(`error writing: ${path}`)
+  }
 }
 
 // parseMods is a helper for generating two arrays, one a list of mods, and the
