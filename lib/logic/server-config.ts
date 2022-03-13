@@ -59,15 +59,26 @@ export function buildServerConfig(
 
 }
 
+// 
+// export async function writeFileFromTemplate(path: string, template: Buffer, data: Data) {
+//   let rendered = render(template.toString(), data);
+
+//   // useful:https://stackoverflow.com/questions/40593875/using-filesystem-in-node-js-with-async-await
+//   try {
+//     fsPromises.writeFile(path, rendered);
+//   } catch (err) {
+//     console.log(`error writing: ${path}`)
+//   }
+// }
+// 
+
 // writeFileFromTemplate takes a path (should be your dist path) and renders
 // a template from the buffer and data
-export async function writeFileFromTemplate(path: string, template: Buffer, data: Data) {
+export function writeFileFromTemplate(path: string, template: Buffer, data: Data) {
   let rendered = render(template.toString(), data);
-  try {
-    fsPromises.writeFile(path, rendered);
-  } catch (err) {
-    console.log(`error writing: ${path}`)
-  }
+  fs.writeFile(path, rendered, (err) => {
+    if (err) throw err;
+  });
 }
 
 // parseMods is a helper for generating two arrays, one a list of mods, and the
