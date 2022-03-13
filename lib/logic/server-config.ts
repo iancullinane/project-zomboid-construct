@@ -59,18 +59,6 @@ export function buildServerConfig(
 
 }
 
-
-async function listDir() {
-  try {
-    return fsPromises.readdir('path/to/dir');
-  } catch (err) {
-    console.error('Error occured while reading directory!', err);
-  }
-}
-
-listDir();
-
-
 // writeFileFromTemplate takes a path (should be your dist path) and renders
 // a template from the buffer and data
 export async function writeFileFromTemplate(path: string, template: Buffer, data: Data) {
