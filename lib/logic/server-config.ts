@@ -75,24 +75,32 @@ export function buildServerConfig(
 // writeFileFromTemplate takes a path (should be your dist path) and renders
 // a template from the buffer and data
 export function writeFileFromTemplate(path: string, template: Buffer, data: Data) {
-  // Open file, register error
-  console.log(`write to: ${path}`)
-  var file = fs.createWriteStream(path, { flags: "w" });
-  file.on('error', (err) => { console.log(`error writing file: ${err}`) });
 
-  console.log()
 
-  // Use template-file methods to render server files
   var rendered = render(template.toString(), data);
-  rendered.split("\n").forEach((v) => { file.write(`${v}\n`) });
-  console.log(rendered);
-  file.end();
+  try {
+    // let contents = await fs.readFileSync(path);
+    if (template) {
+      fs.writeFileSync(path, rendered)
+    }
+  } catch (e) {
+    console.log("Error writing file")
+  }
 
 
-  // let rendered = render(template.toString(), data);
-  // fs.writeFile(path, rendered, (err) => {
-  //   if (err) throw err;
-  // });
+  // Open file, register error
+  // console.log(`write to: ${path}`)
+  // var file = fs.createWriteStream(path, { flags: "w" });
+  // file.on('error', (err) => { console.log(`error writing file: ${err}`) });
+
+  // console.log()
+
+  // // Use template-file methods to render server files
+  // var rendered = render(template.toString(), data);
+  // rendered.split("\n").forEach((v) => { file.write(`${v}\n`) });
+  // console.log(rendered);
+  // file.end();
+
 }
 
 // parseMods is a helper for generating two arrays, one a list of mods, and the
