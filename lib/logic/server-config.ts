@@ -76,6 +76,7 @@ export function buildServerConfig(
 // a template from the buffer and data
 export function writeFileFromTemplate(path: string, template: Buffer, data: Data) {
   // Open file, register error
+  console.log(`write to: ${path}`)
   var file = fs.createWriteStream(path, { flags: "w" });
   file.on('error', (err) => { console.log(`error writing file: ${err}`) });
 
