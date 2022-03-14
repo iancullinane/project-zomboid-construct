@@ -80,9 +80,12 @@ export function writeFileFromTemplate(path: string, template: Buffer, data: Data
   var file = fs.createWriteStream(path, { flags: "w" });
   file.on('error', (err) => { console.log(`error writing file: ${err}`) });
 
+  console.log()
+
   // Use template-file methods to render server files
   var rendered = render(template.toString(), data);
   rendered.split("\n").forEach((v) => { file.write(`${v}\n`) });
+  console.log(rendered);
   file.end();
 
 
