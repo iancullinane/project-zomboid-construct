@@ -1,10 +1,11 @@
 // This could or maybe should be its own package, but for simplicity and because
 // this is for personal user, I am leaving it here
 import * as fs from "fs";
-const fsPromises = fs.promises;
+import * as path from "path";
 
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import { render, Data } from "template-file"
+import { GameConfig, InfraConfig } from "../index"
 
 export interface Config {
   userData: ec2.UserData
@@ -17,13 +18,39 @@ export interface TemplateBuilder {
   d: Data,
 }
 
-export function buildServerConfig(
-  userData: ec2.UserData,
-  serverConfig: Map<string, TemplateBuilder>): Config {
+const TEMPLATE_DIR = path.join(__dirname, "..", "assets", "templates")
+const DIST_DIR = path.join(process.cwd(), "assets", "dist")
+
+function getTemplate(fileName: string): TemplateBuilder {
+  // let t = TemplateBuilder{ b: fs.readFileSync(`${TEMPLATE_DIR}/template_SandboxVars.lua`), d: { }}
+  let t = {
+    b: fs.readFileSync(`${TEMPLATE_DIR}/${fileName}`),
+    d: {}
+  };
+  return t
+};
+
+
+function getTemplates(cfg: GameConfig): Map<string, TemplateBuilder> {
+
+  let serverFiles = new Map<string, TemplateBuilder>();
+  for (let f of cfg.fileList) {
+    serverFiles.set(f, getTemplate(f))
+  }
+
+  return serverFiles;
+}
+
+export function buildServerConfig(userData: ec2.UserData, cfg: GameConfig): Config {
+
+
+  let serverFiles = getTemplates(cfg);
+
+  // serverFiles.set(path.join(DIST_DIR, "server-config", `${props.cfg.servername}_SandboxVars.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_SandboxVars.lua`), d: {} })
 
   // Write the templates
   // todo::interface configs into data and be clever
-  serverConfig.forEach((tmpl, k) => {
+  serverFiles.forEach((tmpl, k) => {
     writeFileFromTemplate(k, tmpl.b, tmpl.d)
   })
 
@@ -43,10 +70,10 @@ export function buildServerConfig(
     `echo "---- Install PZ"`,
     `mkdir /home/steam/pz`,
     `docker run -v /home/steam/pz:/data steamcmd/steamcmd:ubuntu-18 \
-      +login anonymous \
-      +force_install_dir /data \
-      +app_update 380870 validate \
-      +quit`
+        +login anonymous \
+        +force_install_dir /data \
+        +app_update 380870 validate \
+        +quit`
   ]
 
   // userData.addCommands(...updateDebian);
@@ -59,24 +86,9 @@ export function buildServerConfig(
 
 }
 
-// 
-// export async function writeFileFromTemplate(path: string, template: Buffer, data: Data) {
-//   let rendered = render(template.toString(), data);
-
-//   // useful:https://stackoverflow.com/questions/40593875/using-filesystem-in-node-js-with-async-await
-//   try {
-//     fsPromises.writeFile(path, rendered);
-//   } catch (err) {
-//     console.log(`error writing: ${path}`)
-//   }
-// }
-// 
-
 // writeFileFromTemplate takes a path (should be your dist path) and renders
 // a template from the buffer and data
 export function writeFileFromTemplate(path: string, template: Buffer, data: Data) {
-
-
   var rendered = render(template.toString(), data);
   try {
     // let contents = await fs.readFileSync(path);
@@ -86,21 +98,6 @@ export function writeFileFromTemplate(path: string, template: Buffer, data: Data
   } catch (e) {
     console.log("Error writing file")
   }
-
-
-  // Open file, register error
-  // console.log(`write to: ${path}`)
-  // var file = fs.createWriteStream(path, { flags: "w" });
-  // file.on('error', (err) => { console.log(`error writing file: ${err}`) });
-
-  // console.log()
-
-  // // Use template-file methods to render server files
-  // var rendered = render(template.toString(), data);
-  // rendered.split("\n").forEach((v) => { file.write(`${v}\n`) });
-  // console.log(rendered);
-  // file.end();
-
 }
 
 // parseMods is a helper for generating two arrays, one a list of mods, and the
@@ -128,3 +125,33 @@ export function parseMods(modFile: Buffer): { mods: Array<string>, ids: Array<st
     ids,
   }
 }
+
+
+// const unitFileConfig = {
+//       config: {
+//         servername: props.cfg.servername!,
+//         adminPW: "PasswordXYZ",
+//         cachedir: "/home/steam/pz"
+//       }
+//     }
+
+//     let serverFileConfig = {};
+//     if (props.cfg.modFile !== null) {
+//       let { mods, ids } = logic.parseMods(props.cfg.modFile!)
+//       serverFileConfig = {
+//         config: {
+//           mods: mods.join(";"),
+//           ids: ids.join(";"),
+//         }
+//       }
+//     }
+//     // The key is the destination of the files, the object in the second 
+//     // argument is the Buffer with the template, and the data object with any
+//     // replacements, currently the unit file is the only "real" template
+//     serverFiles.set(path.join(DIST_DIR, "server-config", `${props.cfg.servername}_SandboxVars.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_SandboxVars.lua`), d: {} })
+//     serverFiles.set(path.join(DIST_DIR, "server-config", `${props.cfg.servername}_spawnpoints.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_spawnpoints.lua`), d: {} })
+//     serverFiles.set(path.join(DIST_DIR, "server-config", `${props.cfg.servername}_spawnregions.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_spawnregions.lua`), d: {} })
+
+//     // Only this unit file supports templates
+//     serverFiles.set(path.join(DIST_DIR, "server-config", `${props.cfg.servername}.ini`,), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_server.ini`), d: serverFileConfig })
+//     serverFiles.set(path.join(DIST_DIR, `${props.cfg.servername}.service`,), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_service.service`), d: unitFileConfig })
