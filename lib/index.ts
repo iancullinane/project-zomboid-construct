@@ -25,7 +25,6 @@ export interface InfraConfig {
   region: string,
   keyName: string;
   role: iam.IRole,
-  hostedzoneid: string;
   subdomain?: string,
   vpc: ec2.IVpc,
   sg: ec2.ISecurityGroup,
