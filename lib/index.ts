@@ -105,7 +105,6 @@ export class GameServerStack extends Construct implements ITaggable {
     // 
     // This builds the configs and writes to the dist dir
     // 
-    console.log(props.game)
     logic.buildServerConfig(
       this.userData,
       props.game

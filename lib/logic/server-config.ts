@@ -86,12 +86,9 @@ export function buildServerConfig(userData: ec2.UserData, cfg: GameConfig): Conf
     }
   }
 
-
-  console.log(cfg)
-
   let serverFiles = new Map<string, TemplateBuilder>();
 
-  serverFiles.set(path.join(DIST_DIR, "server-config", `${cfg.servername}_SandboxVars.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_SandboxVars.lua`), d: {} });
+  serverFiles.set(path.join(DIST_DIR, "server-config", `${cfg.servername}_SandboxVars.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_SandboxVars.lua`), d: { config: { ch_points: 5 } } });
   serverFiles.set(path.join(DIST_DIR, "server-config", `${cfg.servername}_spawnpoints.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_spawnpoints.lua`), d: {} });
   serverFiles.set(path.join(DIST_DIR, "server-config", `${cfg.servername}_spawnregions.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_spawnregions.lua`), d: {} });
 
@@ -103,8 +100,6 @@ export function buildServerConfig(userData: ec2.UserData, cfg: GameConfig): Conf
   serverFiles.forEach((tmpl, k) => {
     writeFileFromTemplate(k, tmpl.b, tmpl.d)
   })
-
-  console.log(serverFiles)
 
   let addUsers: string[] = [
     `echo "---- Add users"`,
@@ -143,7 +138,6 @@ export function buildServerConfig(userData: ec2.UserData, cfg: GameConfig): Conf
 export function writeFileFromTemplate(path: string, template: Buffer, data: Data) {
   var rendered = render(template.toString(), data);
   try {
-    // let contents = await fs.readFileSync(path);
     if (template) {
       fs.writeFileSync(path, rendered)
     }
