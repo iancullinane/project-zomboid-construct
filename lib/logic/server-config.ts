@@ -99,6 +99,9 @@ export function buildServerConfig(userData: ec2.UserData, cfg: GameConfig): Conf
     writeFileFromTemplate(k, tmpl.b, tmpl.d)
   })
 
+  console.log(cfg)
+  console.log(serverFiles)
+
   let addUsers: string[] = [
     `echo "---- Add users"`,
     `sudo usermod -aG docker ubuntu`,
