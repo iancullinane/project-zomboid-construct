@@ -38,7 +38,7 @@ export interface TemplateBuilder {
 function getTemplate(fileName: string): TemplateBuilder {
   // let t = TemplateBuilder{ b: fs.readFileSync(`${TEMPLATE_DIR}/template_SandboxVars.lua`), d: { }}
   let t = {
-    b: fs.readFileSync(`${TEMPLATE_DIR}/${fileName}`),
+    b: fs.readFileSync(`${TEMPLATE_DIR}/template${fileName}`),
     d: {}
   };
   return t
@@ -73,6 +73,8 @@ export function buildServerConfig(userData: ec2.UserData, cfg: GameConfig): Conf
     }
   }
 
+
+
   let serverFileConfig = {};
   if (cfg.modFile !== null) {
     let { mods, ids } = parseMods(cfg.modFile!)
@@ -83,6 +85,9 @@ export function buildServerConfig(userData: ec2.UserData, cfg: GameConfig): Conf
       }
     }
   }
+
+
+  console.log(cfg)
 
   let serverFiles = new Map<string, TemplateBuilder>();
 
@@ -99,7 +104,6 @@ export function buildServerConfig(userData: ec2.UserData, cfg: GameConfig): Conf
     writeFileFromTemplate(k, tmpl.b, tmpl.d)
   })
 
-  console.log(cfg)
   console.log(serverFiles)
 
   let addUsers: string[] = [
