@@ -12,8 +12,8 @@ import * as r53 from "aws-cdk-lib/aws-route53";
 import * as logic from "./logic/server-config"
 import { ZomboidAccess } from "./components/zomboid-access"
 
-const TEMPLATE_DIR = path.join(__dirname, "..", "assets", "templates")
-const DIST_DIR = path.join(process.cwd(), "assets", "dist")
+export const TEMPLATE_DIR = path.join(__dirname, "..", "assets", "templates")
+export const DIST_DIR = path.join(process.cwd(), "assets", "dist")
 
 path.join(process.cwd(), "assets")
 export interface GameServerProps {
@@ -33,7 +33,7 @@ export interface InfraConfig {
 }
 
 export interface GameConfig {
-  fileList: string[],
+  distdir: string,
   servername?: string,
   modFile?: Buffer,
   public?: Boolean;
@@ -109,9 +109,6 @@ export class GameServerStack extends Construct implements ITaggable {
       this.userData,
       props.game
     );
-
-    console.log(`${props.game.servername}.service`)
-    console.log(path.join(DIST_DIR, `${props.game.servername}.service`))
 
     const s3UnitFile = new Asset(this, "pz-unit-file", {
       path: path.join(DIST_DIR, `${props.game.servername}.service`),

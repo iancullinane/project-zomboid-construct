@@ -1,3 +1,5 @@
+/// <reference path="../index.ts" />
+
 // This could or maybe should be its own package, but for simplicity and because
 // this is for personal user, I am leaving it here
 import * as fs from "fs";
@@ -5,7 +7,20 @@ import * as path from "path";
 
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import { render, Data } from "template-file"
-import { GameConfig, InfraConfig } from "../index"
+import { DIST_DIR, TEMPLATE_DIR, GameConfig, InfraConfig } from "../index"
+
+// const TEMPLATE_DIR = path.join(__dirname, "..", "assets", "templates")
+// const DIST_DIR = path.join(process.cwd(), "assets", "dist")
+
+
+// path.join(DIST_DIR, "server-config", `${props.cfg.servername}_SandboxVars.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_SandboxVars.lua`), d: {} })
+// path.join(DIST_DIR, "server-config", `${props.cfg.servername}_spawnpoints.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_spawnpoints.lua`), d: {} })
+// path.join(DIST_DIR, "server-config", `${props.cfg.servername}_spawnregions.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_spawnregions.lua`), d: {} })
+
+// // t file supports templates
+// path.join(DIST_DIR, "server-config", `${props.cfg.servername}.ini`,), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_server.ini`), d: serverFileConfig })
+// path.join(DIST_DIR, `${props.cfg.servername}.service`,), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_service.service`), d: unitFileConfig })
+
 
 export interface Config {
   userData: ec2.UserData
@@ -18,8 +33,7 @@ export interface TemplateBuilder {
   d: Data,
 }
 
-const TEMPLATE_DIR = path.join(__dirname, "..", "assets", "templates")
-const DIST_DIR = path.join(process.cwd(), "assets", "dist")
+
 
 function getTemplate(fileName: string): TemplateBuilder {
   // let t = TemplateBuilder{ b: fs.readFileSync(`${TEMPLATE_DIR}/template_SandboxVars.lua`), d: { }}
@@ -31,24 +45,55 @@ function getTemplate(fileName: string): TemplateBuilder {
 };
 
 
-function getTemplates(cfg: GameConfig): Map<string, TemplateBuilder> {
+// function getTemplates(cfg: GameConfig): Map<string, TemplateBuilder> {
 
-  let serverFiles = new Map<string, TemplateBuilder>();
-  for (let f of cfg.fileList) {
-    serverFiles.set(f, getTemplate(f))
-  }
+//   let serverFiles = new Map<string, TemplateBuilder>();
+//   for (let f of cfg.fileList) {
+//     serverFiles.set(`${DIST_DIR}/f`, getTemplate(f))
+//   }
 
-  return serverFiles;
-}
+//   return serverFiles;
+// }
+
+// export interface GameConfig {
+//   fileList: string[],
+//   servername?: string,
+//   modFile?: Buffer,
+//   public?: Boolean;
+//   fresh?: boolean,
+// }
 
 export function buildServerConfig(userData: ec2.UserData, cfg: GameConfig): Config {
 
+  const unitFileConfig = {
+    config: {
+      servername: cfg.servername!,
+      adminPW: "PasswordXYZ",
+      cachedir: "/home/steam/pz"
+    }
+  }
 
-  let serverFiles = getTemplates(cfg);
+  let serverFileConfig = {};
+  if (cfg.modFile !== null) {
+    let { mods, ids } = parseMods(cfg.modFile!)
+    serverFileConfig = {
+      config: {
+        mods: mods.join(";"),
+        ids: ids.join(";"),
+      }
+    }
+  }
 
-  // serverFiles.set(path.join(DIST_DIR, "server-config", `${props.cfg.servername}_SandboxVars.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_SandboxVars.lua`), d: {} })
+  let serverFiles = new Map<string, TemplateBuilder>();
 
-  // Write the templates
+  serverFiles.set(path.join(DIST_DIR, "server-config", `${cfg.servername}_SandboxVars.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_SandboxVars.lua`), d: {} });
+  serverFiles.set(path.join(DIST_DIR, "server-config", `${cfg.servername}_spawnpoints.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_spawnpoints.lua`), d: {} });
+  serverFiles.set(path.join(DIST_DIR, "server-config", `${cfg.servername}_spawnregions.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_spawnregions.lua`), d: {} });
+
+  // t file supports templates
+  serverFiles.set(path.join(DIST_DIR, "server-config", `${cfg.servername}.ini`,), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_server.ini`), d: serverFileConfig })
+  serverFiles.set(path.join(DIST_DIR, `${cfg.servername}.service`,), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_service.service`), d: unitFileConfig })
+
   // todo::interface configs into data and be clever
   serverFiles.forEach((tmpl, k) => {
     writeFileFromTemplate(k, tmpl.b, tmpl.d)
