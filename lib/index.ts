@@ -1,4 +1,4 @@
-import { CfnOutput, ITaggable, TagManager, Tags } from "aws-cdk-lib";
+import { CfnOutput, ITaggable, TagManager, Tags, Stack } from "aws-cdk-lib";
 import { Construct } from 'constructs';
 import { Asset } from "aws-cdk-lib/aws-s3-assets";
 
@@ -29,6 +29,7 @@ export interface InfraConfig {
   vpc: ec2.IVpc,
   sg: ec2.ISecurityGroup,
   hz: r53.IHostedZone,
+  vol: ec2.IVolume,
   instancetype?: string,
 }
 
@@ -59,36 +60,9 @@ export class GameServerStack extends Construct implements ITaggable {
     props.game.fresh === undefined ? props.game.fresh = false : null;
     props.infra.instancetype === undefined ? props.infra.instancetype = "t2.micro" : null;
 
+    // Select an image type
     const machineImage = ec2.MachineImage.genericLinux(amimap);
 
-    // const unitFileConfig = {
-    //   config: {
-    //     servername: props.game.servername!,
-    //     adminPW: "PasswordXYZ",
-    //     cachedir: "/home/steam/pz"
-    //   }
-    // }
-
-    // let serverFileConfig = {};
-    // if (props.cfg.modFile !== null) {
-    //   let { mods, ids } = logic.parseMods(props.cfg.modFile!)
-    //   serverFileConfig = {
-    //     config: {
-    //       mods: mods.join(";"),
-    //       ids: ids.join(";"),
-    //     }
-    //   }
-    // }
-    // // The key is the destination of the files, the object in the second 
-    // // argument is the Buffer with the template, and the data object with any
-    // // replacements, currently the unit file is the only "real" template
-    // serverFiles.set(path.join(DIST_DIR, "server-config", `${props.game.servername}_SandboxVars.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_SandboxVars.lua`), d: {} })
-    // serverFiles.set(path.join(DIST_DIR, "server-config", `${props.game.servername}_spawnpoints.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_spawnpoints.lua`), d: {} })
-    // serverFiles.set(path.join(DIST_DIR, "server-config", `${props.game.servername}_spawnregions.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_spawnregions.lua`), d: {} })
-
-    // // Only this unit file supports templates
-    // serverFiles.set(path.join(DIST_DIR, "server-config", `${props.game.servername}.ini`,), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_server.ini`), d: serverFileConfig })
-    // serverFiles.set(path.join(DIST_DIR, `${props.game.servername}.service`,), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_service.service`), d: unitFileConfig })
 
     const setupCommands = ec2.UserData.forLinux();
     setupCommands.addCommands(
@@ -101,6 +75,8 @@ export class GameServerStack extends Construct implements ITaggable {
 
     this.userData = new ec2.MultipartUserData;
     this.userData.addUserDataPart(setupCommands, "", true);
+
+
 
     // 
     // This builds the configs and writes to the dist dir
@@ -145,6 +121,17 @@ export class GameServerStack extends Construct implements ITaggable {
       `systemctl start ${props.game.servername}.service`,
     );
 
+    // ### Initial steps to mount the volume  ###
+    // mkfs -t xfs /dev/xvdf
+    // yum install xfsprogs -y
+    // mkdir /wddProjects
+    // mount /dev/xvdf /wddProjects
+
+    // ### On Server reboot re-attach volume 
+    // sudo cp /etc/fstab /etc/fstab.orig
+    // blkid | egrep "/dev/xvdf: UUID="
+    // echo "UUID=xxx  /wddProjects  xfs  defaults,nofail  0  2" >> /etc/fstab
+
     props.infra.role.addManagedPolicy(
       iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonSSMManagedInstanceCore")
     );
@@ -161,9 +148,33 @@ export class GameServerStack extends Construct implements ITaggable {
       securityGroup: props.infra.sg,
       role: props.infra.role,
       userData: this.userData,
+      // blockDevices: [props.infra.vol],
+      // blockDevices: [{ deviceName: '/dev/sdf', volume: { ebsDevice: { deleteOnTermination: false, volumeSize: 1 } } }],
     });
     Tags.of(instance).add("game", `pz-${props.game.servername}`);
 
+    props.infra.vol.grantAttachVolumeByResourceTag(instance.grantPrincipal, [instance]);
+    const targetDevice = '/dev/xvdf';
+    instance.userData.addCommands(
+      // Retrieve token for accessing EC2 instance metadata (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-data-retrieval.html)
+      `TOKEN=$(curl -SsfX PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")`,
+      // Retrieve the instance Id of the current EC2 instance
+      `INSTANCE_ID=$(curl -SsfH "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id)`,
+      // Attach the volume to /dev/xvdz
+      `aws --region ${Stack.of(this).region} ec2 attach-volume --volume-id ${props.infra.vol.volumeId} --instance-id $INSTANCE_ID --device ${targetDevice}`,
+      // Wait until the volume has attached
+      `while ! test -e ${targetDevice}; do sleep 1; done`
+      // The volume will now be mounted. You may have to add additional code to format the volume if it has not been prepared.
+    );
+
+    instance.userData.addCommands(
+      `mkfs -t xfs /dev/xvdf`,
+      `mkdir /mnt/${props.game.servername}`,
+      `mount /dev/xvdf /mnt/${props.game.servername}`,
+      `sudo cp /etc/fstab /etc/fstab.orig`,
+      `blkid | egrep "/dev/xvdf: UUID="`,
+      `echo "UUID=xxx  /mnt/${props.game.servername}  xfs  defaults,nofail  0  2" >> /etc/fstab`,
+    );
 
 
     // Holder for pz sg's
