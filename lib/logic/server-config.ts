@@ -69,7 +69,7 @@ export function buildServerConfig(userData: ec2.UserData, cfg: GameConfig): Conf
     config: {
       servername: cfg.servername!,
       adminPW: "PasswordXYZ",
-      cachedir: "/home/steam/pz"
+      cachedir: `/mnt/${cfg.servername}`
     }
   }
 
@@ -115,8 +115,8 @@ export function buildServerConfig(userData: ec2.UserData, cfg: GameConfig): Conf
   // ${steamcmdMods.join(' ')} \
   let installCommands: string[] = [
     `echo "---- Install PZ"`,
-    `mkdir /home/steam/pz`,
-    `docker run -v /home/steam/pz:/data steamcmd/steamcmd:ubuntu-18 \
+    `mkdir /mnt/${cfg.servername}`,
+    `docker run -v /mnt/${cfg.servername}:/data steamcmd/steamcmd:ubuntu-18 \
         +login anonymous \
         +force_install_dir /data \
         +app_update 380870 validate \
