@@ -153,7 +153,8 @@ export class GameServerStack extends Construct implements ITaggable {
     });
     Tags.of(instance).add("game", `pz-${props.game.servername}`);
 
-    props.infra.vol.grantAttachVolumeByResourceTag(instance.grantPrincipal, [instance]);
+
+    props.infra.vol.grantAttachVolumeByResourceTag(instance.grantPrincipal, [instance], "zomboid");
     const targetDevice = '/dev/xvdf';
     instance.userData.addCommands(
       // Retrieve token for accessing EC2 instance metadata (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-data-retrieval.html)
