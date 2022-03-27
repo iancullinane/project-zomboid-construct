@@ -135,8 +135,8 @@ export class GameServerStack extends Construct implements ITaggable {
     });
     serverConfigDir.grantRead(props.infra.role);
 
-    const unitFileDir = new Asset(this, "pz-config-dir", {
-      path: path.join(DIST_DIR, "unit-files"),
+    const unitFileDir = new Asset(this, "pz-unit-dir", {
+      path: path.join(DIST_DIR, "units"),
     });
     serverConfigDir.grantRead(props.infra.role);
 
