@@ -65,7 +65,9 @@ export function buildServerConfig(userData: ec2.UserData, cfg: GameConfig): Conf
   // t file supports templates
   serverFiles.set(path.join(DIST_DIR, "server-config", `${cfg.servername}.ini`,), { b: fs.readFileSync(`${TEMPLATE_DIR}/game/template_server.ini`), d: serverFileConfig })
 
-  serverFiles.set(path.join(DIST_DIR, `${cfg.servername}.service`,), { b: fs.readFileSync(`${TEMPLATE_DIR}/game/template_service.service`), d: unitFileConfig })
+  serverFiles.set(path.join(DIST_DIR, "units", `${cfg.servername}.service`,), { b: fs.readFileSync(`${TEMPLATE_DIR}/units/template_service.service`), d: unitFileConfig })
+  serverFiles.set(path.join(DIST_DIR, "units", "ebs-unit.service"), { b: fs.readFileSync(`${TEMPLATE_DIR}/units/ebs-unit.service`), d: {} })
+  serverFiles.set(path.join(DIST_DIR, "units", "r53-unit.service"), { b: fs.readFileSync(`${TEMPLATE_DIR}/units/r53-unit.service`), d: {} })
 
   // todo::interface configs into data and be clever
   serverFiles.forEach((tmpl, k) => {
