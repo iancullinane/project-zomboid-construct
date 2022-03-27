@@ -125,41 +125,60 @@ export class GameServerStack extends Construct implements ITaggable {
       props.game
     );
 
-    const s3UnitFile = new Asset(this, "pz-unit-file", {
-      path: path.join(DIST_DIR, `${props.game.servername}.service`),
-    });
-    s3UnitFile.grantRead(props.infra.role);
+    // const s3UnitFile = new Asset(this, "pz-unit-file", {
+    //   path: path.join(DIST_DIR, `${props.game.servername}.service`),
+    // });
+    // s3UnitFile.grantRead(props.infra.role);
 
-    const s3ConfigDir = new Asset(this, "pz-config-dir", {
+    const serverConfigDir = new Asset(this, "pz-config-dir", {
       path: path.join(DIST_DIR, "server-config"),
     });
-    s3ConfigDir.grantRead(props.infra.role);
+    serverConfigDir.grantRead(props.infra.role);
+
+    const unitFileDir = new Asset(this, "pz-config-dir", {
+      path: path.join(DIST_DIR, "unit-files"),
+    });
+    serverConfigDir.grantRead(props.infra.role);
 
 
     // Zip up config directory, I know this will zip because I am using the
     // folder as my `localFile`
     this.userData.addS3DownloadCommand({
-      bucket: s3ConfigDir.bucket!,
-      bucketKey: s3ConfigDir.s3ObjectKey!,
+      bucket: serverConfigDir.bucket!,
+      bucketKey: serverConfigDir.s3ObjectKey!,
+      localFile: `/mnt/${props.game.servername}/files/`,
+    });
+
+    this.userData.addS3DownloadCommand({
+      bucket: unitFileDir.bucket!,
+      bucketKey: unitFileDir.s3ObjectKey!,
       localFile: `/mnt/${props.game.servername}/files/`,
     });
 
     // This will be a single object because it is a filename
-    this.userData.addS3DownloadCommand({
-      bucket: s3UnitFile.bucket!,
-      bucketKey: s3UnitFile.s3ObjectKey!,
-      localFile: `/etc/systemd/system/${props.game.servername}.service`,
-    });
+    // this.userData.addS3DownloadCommand({
+    //   bucket: s3UnitFile.bucket!,
+    //   bucketKey: s3UnitFile.s3ObjectKey!,
+    //   localFile: `/etc/systemd/system/${props.game.servername}.service`,
+    // });
+
 
     // Place, enable, and start the service
     this.userData.addCommands(
       `mkdir -p /mnt/${props.game.servername}/Server/`, // Just in case
-      `unzip /mnt/${props.game.servername}/files/${s3ConfigDir.s3ObjectKey} -d /mnt/${props.game.servername}/Server/`,
+      `unzip /mnt/${props.game.servername}/files/${serverConfigDir.s3ObjectKey} -d /mnt/${props.game.servername}/Server/`,
       `chmod +x /etc/systemd/system/${props.game.servername}.service`,
       `systemctl enable ${props.game.servername}.service`,
       `systemctl start ${props.game.servername}.service`,
     );
 
+    this.userData.addCommands(
+      `unzip /mnt/${props.game.servername}/files/${unitFileDir.s3ObjectKey} -d /etc/systemd/system/`,
+      `systemctl enable ebs-unit.service`,
+      `systemctl start ebs-unit.service`,
+      `systemctl enable r53-unit.service`,
+      `systemctl start r53-unit.service`,
+    );
     // ### Initial steps to mount the volume  ###
     // mkfs -t xfs /dev/xvdf
     // yum install xfsprogs -y
