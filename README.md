@@ -25,29 +25,28 @@ The stack will provide the following:
 
 ### Config Props
 
-This is all messy from dev, I will clean it up later, but you need to provide the `GameServerProps` interface, which includes a `ServerConfig` interface...sorry
+Requires config interfaces for the infrastructue and game itself:
 
 ---
 ```markdown
-export interface GameServerProps {
-  cfg: ServerConfig,
+export interface InfraConfig {
+  region: string,
+  keyName: string;
   role: iam.IRole,
+  subdomain?: string,
   vpc: ec2.IVpc,
   sg: ec2.ISecurityGroup,
   hz: r53.IHostedZone,
-  keyName: string;
-  serverName?: string,
-  modFile?: Buffer,
-  instanceType?: string
+  vol: ec2.IVolume,
+  instancetype?: string,
 }
 
-export interface ServerConfig {
-  region: string,
-  ami: string,
-  subdomain: string,
-  servername: string,
-  instancetype: string,
-  hostedzoneid: string,
+export interface GameConfig {
+  distdir: string,
+  servername?: string,
+  modFile?: Buffer,
+  public?: Boolean;
+  fresh?: boolean,
 }
 ```
 ---
