@@ -49,7 +49,7 @@ const amimap: Record<string, string> = {
 
 export class GameServerStack extends Construct implements ITaggable {
 
-  public readonly userData: ec2.MultipartUserData;
+  public userData: ec2.MultipartUserData;
   public readonly tags: TagManager;
 
   constructor(scope: Construct, id: string, props: GameServerProps) {
@@ -77,7 +77,7 @@ export class GameServerStack extends Construct implements ITaggable {
       keyName: props.infra.keyName,
       securityGroup: props.infra.sg,
       role: props.infra.role,
-      userData: this.userData,
+      // userData: this.userData,
     });
     Tags.of(instance).add("game", `pz-${props.game.servername}`);
 
@@ -95,7 +95,7 @@ export class GameServerStack extends Construct implements ITaggable {
 
     props.infra.vol.grantAttachVolumeByResourceTag(instance.grantPrincipal, [instance], "zomboid");
     const targetDevice = '/dev/xvdf';
-    instance.userData.addCommands(
+    this.userData.addCommands(
       // Retrieve token for accessing EC2 instance metadata (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-data-retrieval.html)
       `TOKEN=$(curl -SsfX PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")`,
       // Retrieve the instance Id of the current EC2 instance
@@ -107,7 +107,7 @@ export class GameServerStack extends Construct implements ITaggable {
       // The volume will now be mounted. You may have to add additional code to format the volume if it has not been prepared.
     );
 
-    instance.userData.addCommands(
+    this.userData.addCommands(
       `mkfs -t xfs /dev/xvdf`,
       `mkdir /mnt/${props.game.servername}`,
       `mount /dev/xvdf /mnt/${props.game.servername}`,
@@ -179,6 +179,8 @@ export class GameServerStack extends Construct implements ITaggable {
       `systemctl enable r53-unit.service`,
       `systemctl start r53-unit.service`,
     );
+
+    instance.userData.addCommands(this.userData.render())
     // ### Initial steps to mount the volume  ###
     // mkfs -t xfs /dev/xvdf
     // yum install xfsprogs -y
