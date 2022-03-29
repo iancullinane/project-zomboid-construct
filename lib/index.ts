@@ -180,6 +180,8 @@ export class GameServerStack extends Construct implements ITaggable {
       `systemctl start r53-unit.service`,
     );
 
+    console.log(this.userData);
+
     instance.userData.addCommands(this.userData.render())
     // ### Initial steps to mount the volume  ###
     // mkfs -t xfs /dev/xvdf
