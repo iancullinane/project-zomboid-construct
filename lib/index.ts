@@ -77,7 +77,7 @@ export class GameServerStack extends Construct implements ITaggable {
       keyName: props.infra.keyName,
       securityGroup: props.infra.sg,
       role: props.infra.role,
-      // userData: this.userData,
+      userData: this.userData,
     });
     Tags.of(instance).add("game", `pz-${props.game.servername}`);
 
@@ -167,22 +167,22 @@ export class GameServerStack extends Construct implements ITaggable {
     this.userData.addCommands(
       `mkdir -p /mnt/${props.game.servername}/Server/`, // Just in case
       `unzip /mnt/${props.game.servername}/files/${serverConfigDir.s3ObjectKey} -d /mnt/${props.game.servername}/Server/`,
+      `unzip /mnt/${props.game.servername}/files/${unitFileDir.s3ObjectKey} -d /etc/systemd/system/`,
       `chmod +x /etc/systemd/system/${props.game.servername}.service`,
       `systemctl enable ${props.game.servername}.service`,
       `systemctl start ${props.game.servername}.service`,
     );
 
     this.userData.addCommands(
-      `unzip /mnt/${props.game.servername}/files/${unitFileDir.s3ObjectKey} -d /etc/systemd/system/`,
       `systemctl enable ebs-unit.service`,
       `systemctl start ebs-unit.service`,
       `systemctl enable r53-unit.service`,
       `systemctl start r53-unit.service`,
     );
 
-    console.log(this.userData);
+    // console.log(this.userData);
 
-    instance.userData.addCommands(this.userData.render())
+    // instance.userData = this.userData
     // ### Initial steps to mount the volume  ###
     // mkfs -t xfs /dev/xvdf
     // yum install xfsprogs -y
