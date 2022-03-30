@@ -66,8 +66,10 @@ export class GameServerStack extends Construct implements ITaggable {
       iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonSSMManagedInstanceCore")
     );
 
+
+    this.userData = new ec2.MultipartUserData;
     const setupCommands = ec2.UserData.forLinux();
-    this.userData.addCommands(
+    setupCommands.addCommands(
       `echo "---- Install deps"`,
       `sudo add-apt-repository multiverse`,
       `sudo dpkg --add-architecture i386`,
