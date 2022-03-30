@@ -66,6 +66,19 @@ export class GameServerStack extends Construct implements ITaggable {
       iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonSSMManagedInstanceCore")
     );
 
+    const setupCommands = ec2.UserData.forLinux();
+    this.userData.addCommands(
+      `echo "---- Install deps"`,
+      `sudo add-apt-repository multiverse`,
+      `sudo dpkg --add-architecture i386`,
+      `sudo apt update`,
+      `sudo apt install -y lib32gcc1 libsdl2-2.0-0:i386 docker.io awscli unzip`
+    );
+
+    // this.userData = new ec2.MultipartUserData;
+    this.userData.addUserDataPart(setupCommands, "", true);
+
+
     // ---- Start server
     const instance = new ec2.Instance(this, "project-zomboid-ec2", {
       instanceType: new ec2.InstanceType(props.infra.instancetype),
@@ -81,17 +94,6 @@ export class GameServerStack extends Construct implements ITaggable {
     });
     Tags.of(instance).add("game", `pz-${props.game.servername}`);
 
-    // const setupCommands = ec2.UserData.forLinux();
-    this.userData.addCommands(
-      `echo "---- Install deps"`,
-      `sudo add-apt-repository multiverse`,
-      `sudo dpkg --add-architecture i386`,
-      `sudo apt update`,
-      `sudo apt install -y lib32gcc1 libsdl2-2.0-0:i386 docker.io awscli unzip`
-    );
-
-    // this.userData = new ec2.MultipartUserData;
-    // this.userData.addUserDataPart(setupCommands, "", true);
 
     props.infra.vol.grantAttachVolumeByResourceTag(instance.grantPrincipal, [instance], "zomboid");
     const targetDevice = '/dev/xvdf';
