@@ -81,8 +81,8 @@ export class GameServerStack extends Construct implements ITaggable {
     });
     Tags.of(instance).add("game", `pz-${props.game.servername}`);
 
-    const setupCommands = ec2.UserData.forLinux();
-    setupCommands.addCommands(
+    // const setupCommands = ec2.UserData.forLinux();
+    this.userData.addCommands(
       `echo "---- Install deps"`,
       `sudo add-apt-repository multiverse`,
       `sudo dpkg --add-architecture i386`,
@@ -90,12 +90,12 @@ export class GameServerStack extends Construct implements ITaggable {
       `sudo apt install -y lib32gcc1 libsdl2-2.0-0:i386 docker.io awscli unzip`
     );
 
-    this.userData = new ec2.MultipartUserData;
-    this.userData.addUserDataPart(setupCommands, "", true);
+    // this.userData = new ec2.MultipartUserData;
+    // this.userData.addUserDataPart(setupCommands, "", true);
 
     props.infra.vol.grantAttachVolumeByResourceTag(instance.grantPrincipal, [instance], "zomboid");
     const targetDevice = '/dev/xvdf';
-    this.userData.addCommands(
+    instance.userData.addCommands(
       // Retrieve token for accessing EC2 instance metadata (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-data-retrieval.html)
       `TOKEN=$(curl -SsfX PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")`,
       // Retrieve the instance Id of the current EC2 instance
@@ -107,7 +107,7 @@ export class GameServerStack extends Construct implements ITaggable {
       // The volume will now be mounted. You may have to add additional code to format the volume if it has not been prepared.
     );
 
-    this.userData.addCommands(
+    instance.userData.addCommands(
       `mkfs -t xfs /dev/xvdf`,
       `mkdir /mnt/${props.game.servername}`,
       `mount /dev/xvdf /mnt/${props.game.servername}`,
@@ -121,7 +121,7 @@ export class GameServerStack extends Construct implements ITaggable {
     // This builds the configs and writes to the dist dir
     // 
     logic.buildServerConfig(
-      this.userData,
+      instance.userData,
       props.game
     );
 
@@ -143,13 +143,13 @@ export class GameServerStack extends Construct implements ITaggable {
 
     // Zip up config directory, I know this will zip because I am using the
     // folder as my `localFile`
-    this.userData.addS3DownloadCommand({
+    instance.userData.addS3DownloadCommand({
       bucket: serverConfigDir.bucket!,
       bucketKey: serverConfigDir.s3ObjectKey!,
       localFile: `/mnt/${props.game.servername}/files/`,
     });
 
-    this.userData.addS3DownloadCommand({
+    instance.userData.addS3DownloadCommand({
       bucket: unitFileDir.bucket!,
       bucketKey: unitFileDir.s3ObjectKey!,
       localFile: `/mnt/${props.game.servername}/files/`,
@@ -164,7 +164,7 @@ export class GameServerStack extends Construct implements ITaggable {
 
 
     // Place, enable, and start the service
-    this.userData.addCommands(
+    instance.userData.addCommands(
       `mkdir -p /mnt/${props.game.servername}/Server/`, // Just in case
       `unzip /mnt/${props.game.servername}/files/${serverConfigDir.s3ObjectKey} -d /mnt/${props.game.servername}/Server/`,
       `unzip /mnt/${props.game.servername}/files/${unitFileDir.s3ObjectKey} -d /etc/systemd/system/`,
@@ -173,7 +173,7 @@ export class GameServerStack extends Construct implements ITaggable {
       `systemctl start ${props.game.servername}.service`,
     );
 
-    this.userData.addCommands(
+    instance.userData.addCommands(
       `systemctl enable ebs-unit.service`,
       `systemctl start ebs-unit.service`,
       `systemctl enable r53-unit.service`,
@@ -182,7 +182,7 @@ export class GameServerStack extends Construct implements ITaggable {
 
     // console.log(this.userData);
 
-    // instance.userData = this.userData
+    // instance.userData = this.userData;
     // ### Initial steps to mount the volume  ###
     // mkfs -t xfs /dev/xvdf
     // yum install xfsprogs -y
