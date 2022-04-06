@@ -148,7 +148,7 @@ SandboxVars = {
     -- 4 = Slow (200 Days)
     ErosionSpeed = 3,
     -- Number of days until 100% growth. -1 means no growth. Zero means use the Erosion Speed option. Maximum 36,500 (100 years). Minimum=-1 Maximum=36500 Default=0
-    ErosionDays = 0,
+    ErosionDays = 365,
     -- Modifies the base XP gain from actions by this number. Minimum=0.00 Maximum=1000.00 Default=1.00
     XpMultiplier = 2.0,
     -- Use this to multiply or reduce engine general loudness. Minimum=0.00 Maximum=100.00 Default=1.00
@@ -218,7 +218,7 @@ SandboxVars = {
     -- 4 = Every Month
     LootRespawn = 3,
     -- When > 0, loot will not respawn in zones that have been visited within this number of in-game hours. Minimum=0 Maximum=2147483647 Default=0
-    SeenHoursPreventLootRespawn = 48,
+    SeenHoursPreventLootRespawn = 720,
     -- A comma-separated list of item types that will be removed after HoursForWorldItemRemoval hours.
     WorldItemRemovalList = "Base.Vest,Base.Shirt,Base.Blouse,Base.Skirt,Base.Shoes,Base.Hat,Base.Glasses",
     -- Number of hours since an item was dropped on the ground before it is removed.  Items are removed the next time that part of the map is loaded.  Zero means items are not removed. Minimum=0.00 Maximum=2147483647.00 Default=24.00
@@ -452,12 +452,12 @@ SandboxVars = {
         -- 1 = Sprinters
         -- 2 = Fast Shamblers
         -- 3 = Shamblers
-        Speed = 2,
+        Speed = {{ config.zed_speed }},
         -- Controls the damage zombies inflict per attack.
         -- 1 = Superhuman
         -- 2 = Normal
         -- 3 = Weak
-        Strength = 3,
+        Strength = 2,
         -- Controls the difficulty to kill zombies.
         -- 1 = Tough
         -- 2 = Normal
@@ -505,15 +505,15 @@ SandboxVars = {
         -- 1 = Slows + Weakens
         -- 2 = Slows
         -- 3 = Weakens
-        Decomp = 1,
+        Decomp = 3,
         -- Controls zombie vision radius.
         -- 1 = Eagle
         -- 2 = Normal
-        Sight = 3,
+        Sight = 2,
         -- Controls zombie hearing radius.
         -- 1 = Pinpoint
         -- 2 = Normal
-        Hearing = 3,
+        Hearing = 2,
         -- Zombies that have not seen/heard player can attack doors and constructions while roaming.
         ThumpNoChasing = false,
         -- Governs whether or not zombies can destroy player constructions and defences.
@@ -521,7 +521,7 @@ SandboxVars = {
         -- Governs whether zombies are more active during the day, or whether they act more nocturnally.  Active zombies will use the speed set in the "Speed" setting. Inactive zombies will be slower, and tend not to give chase.
         -- 1 = Both
         -- 2 = Night
-        ActiveOnly = 3,
+        ActiveOnly = 2,
         -- Allows zombies to trigger house alarms when breaking through windows and doors.
         TriggerHouseAlarm = true,
         -- When enabled if multiple zombies are attacking they can drag you down to feed. Dependent on zombie strength.
@@ -531,11 +531,11 @@ SandboxVars = {
     },
     ZombieConfig = {
         -- Set by the "Zombie Count" population option. 4.0 = Insane, Very High = 3.0, 2.0 = High, 1.0 = Normal, 0.35 = Low, 0.0 = None. Minimum=0.00 Maximum=4.00 Default=1.00
-        PopulationMultiplier = 1.0,
+        PopulationMultiplier = {{ config.pop }},
         -- Adjusts the desired population at the start of the game. Minimum=0.00 Maximum=4.00 Default=1.00
-        PopulationStartMultiplier = 0.8,
+        PopulationStartMultiplier = 1.0,
         -- Adjusts the desired population on the peak day. Minimum=0.00 Maximum=4.00 Default=1.50
-        PopulationPeakMultiplier = 3.0,
+        PopulationPeakMultiplier = {{ config.peak }},
         -- The day when the population reaches it's peak. Minimum=1 Maximum=365 Default=28
         PopulationPeakDay = 40,
         -- The number of hours that must pass before zombies may respawn in a cell. If zero, spawning is disabled. Minimum=0.00 Maximum=8760.00 Default=72.00
@@ -549,9 +549,9 @@ SandboxVars = {
         -- The distance a zombie will try to walk towards the last sound it heard. Minimum=10 Maximum=1000 Default=100
         FollowSoundDistance = 80,
         -- The size of groups real zombies form when idle. Zero means zombies don't form groups. Groups don't form inside buildings or forest zones. Minimum=0 Maximum=1000 Default=20
-        RallyGroupSize = 30,
+        RallyGroupSize = 40,
         -- The distance real zombies travel to form groups when idle. Minimum=5 Maximum=50 Default=20
-        RallyTravelDistance = 20,
+        RallyTravelDistance = 40,
         -- The distance between zombie groups. Minimum=5 Maximum=25 Default=15
         RallyGroupSeparation = 25,
         -- How close members of a group stay to the group's leader. Minimum=1 Maximum=10 Default=3

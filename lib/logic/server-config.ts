@@ -54,17 +54,20 @@ export function buildServerConfig(userData: ec2.UserData, cfg: GameConfig): Conf
     }
   }
 
+  let sandboxFileConfig = {
+    config: {
+      ch_points: 10,
+      zed_speed: 2,
+      pop: 1.0,
+      peak: 2.5
+    }
+  };
+
   let serverFiles = new Map<string, TemplateBuilder>();
 
   serverFiles.set(
     path.join(DIST_DIR, "server-config", `${cfg.servername}_SandboxVars.lua`),
-    {
-      b: fs.readFileSync(`${TEMPLATE_DIR}/game/template_SandboxVars.lua`), d:
-      {
-        config:
-          { ch_points: 5 }
-      }
-    }
+    { b: fs.readFileSync(`${TEMPLATE_DIR}/game/template_SandboxVars.lua`), d: sandboxFileConfig }
   );
 
   serverFiles.set(path.join(DIST_DIR, "server-config", `${cfg.servername}_spawnpoints.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/game/template_spawnpoints.lua`), d: {} });
