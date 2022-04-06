@@ -66,6 +66,13 @@ export class GameServerStack extends Construct implements ITaggable {
       iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonSSMManagedInstanceCore")
     );
 
+    // TODO::Give role route53:ChangeResourceRecordSets on arn::HostedZoneId
+    props.infra.role.attachInlinePolicy(new iam.Policy(this, `${props.game.servername}-ebs-policy`, {
+      statements: [new iam.PolicyStatement({
+        actions: ['route53:ChangeResourceRecordSets'],
+        resources: [props.infra.hz.hostedZoneArn],
+      })],
+    }))
 
     this.userData = new ec2.MultipartUserData;
     const setupCommands = ec2.UserData.forLinux();
@@ -77,7 +84,8 @@ export class GameServerStack extends Construct implements ITaggable {
       `sudo apt install -y lib32gcc1 libsdl2-2.0-0:i386 docker.io awscli unzip`
     );
 
-    // this.userData = new ec2.MultipartUserData;
+    // You must set true for the third argument `makeDefault` in order to use
+    // the following multipart patterns
     this.userData.addUserDataPart(setupCommands, "", true);
 
 
@@ -92,12 +100,16 @@ export class GameServerStack extends Construct implements ITaggable {
       keyName: props.infra.keyName,
       securityGroup: props.infra.sg,
       role: props.infra.role,
+      // User data can only be mutated via its functions past this point
       userData: this.userData,
     });
     Tags.of(instance).add("game", `pz-${props.game.servername}`);
 
-
+    // See the docs on this method for more info:
+    // https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_ec2.Volume.html#grantwbrattachwbrvolumewbrbywbrresourcewbrtaggrantee-constructs-tagkeysuffix
     props.infra.vol.grantAttachVolumeByResourceTag(instance.grantPrincipal, [instance], "zomboid");
+
+    // TODO::Probably would not work multiple mounted volumes
     const targetDevice = '/dev/xvdf';
     instance.userData.addCommands(
       // Retrieve token for accessing EC2 instance metadata (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-data-retrieval.html)
@@ -184,25 +196,6 @@ export class GameServerStack extends Construct implements ITaggable {
       `systemctl start r53-unit.service`,
     );
 
-    // console.log(this.userData);
-
-    // instance.userData = this.userData;
-    // ### Initial steps to mount the volume  ###
-    // mkfs -t xfs /dev/xvdf
-    // yum install xfsprogs -y
-    // mkdir /wddProjects
-    // mount /dev/xvdf /wddProjects
-
-    // ### On Server reboot re-attach volume 
-    // sudo cp /etc/fstab /etc/fstab.orig
-    // blkid | egrep "/dev/xvdf: UUID="
-    // echo "UUID=xxx  /wddProjects  xfs  defaults,nofail  0  2" >> /etc/fstab
-
-
-
-
-
-
     // Holder for pz sg's
     // todo::nested?
     const zomboidServerSg = new ec2.SecurityGroup(
@@ -274,21 +267,5 @@ export class GameServerStack extends Construct implements ITaggable {
       value: instance.instancePublicIp,
       exportName: `${props.game.servername}-IP-Address`
     });
-
-    //   // Configure the `natGatewayProvider` when defining a Vpc
-    //   const natGatewayProvider = NatProvider.instance({
-    //     instanceType: new InstanceType('t2.micro'),
-    //   });
-
-    //   // The code that defines your stack goes here
-    //   const baseVpc = new Vpc(this, 'base-vpc', {
-    //     cidr: props.cidrRange,
-    //     maxAzs: props.azs,
-    //     natGatewayProvider: natGatewayProvider,
-    //   })
-    //   const vpcSG = new SecurityGroup(this, 'SG', { vpc: baseVpc });
-
-    //   new CfnOutput(this, "VPC ID", { value: baseVpc.vpcId});
-    //   new CfnOutput(this, "SG ID", { value: vpcSG.securityGroupId});
   }
 }

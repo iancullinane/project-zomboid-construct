@@ -43,8 +43,6 @@ export function buildServerConfig(userData: ec2.UserData, cfg: GameConfig): Conf
     }
   }
 
-
-
   let serverFileConfig = {};
   if (cfg.modFile !== null) {
     let { mods, ids } = parseMods(cfg.modFile!)
@@ -58,7 +56,17 @@ export function buildServerConfig(userData: ec2.UserData, cfg: GameConfig): Conf
 
   let serverFiles = new Map<string, TemplateBuilder>();
 
-  serverFiles.set(path.join(DIST_DIR, "server-config", `${cfg.servername}_SandboxVars.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/game/template_SandboxVars.lua`), d: { config: { ch_points: 5 } } });
+  serverFiles.set(
+    path.join(DIST_DIR, "server-config", `${cfg.servername}_SandboxVars.lua`),
+    {
+      b: fs.readFileSync(`${TEMPLATE_DIR}/game/template_SandboxVars.lua`), d:
+      {
+        config:
+          { ch_points: 5 }
+      }
+    }
+  );
+
   serverFiles.set(path.join(DIST_DIR, "server-config", `${cfg.servername}_spawnpoints.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/game/template_spawnpoints.lua`), d: {} });
   serverFiles.set(path.join(DIST_DIR, "server-config", `${cfg.servername}_spawnregions.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/game/template_spawnregions.lua`), d: {} });
 
@@ -144,33 +152,3 @@ export function parseMods(modFile: Buffer): { mods: Array<string>, ids: Array<st
     ids,
   }
 }
-
-
-// const unitFileConfig = {
-//       config: {
-//         servername: props.cfg.servername!,
-//         adminPW: "PasswordXYZ",
-//         cachedir: "/home/steam/pz"
-//       }
-//     }
-
-//     let serverFileConfig = {};
-//     if (props.cfg.modFile !== null) {
-//       let { mods, ids } = logic.parseMods(props.cfg.modFile!)
-//       serverFileConfig = {
-//         config: {
-//           mods: mods.join(";"),
-//           ids: ids.join(";"),
-//         }
-//       }
-//     }
-//     // The key is the destination of the files, the object in the second 
-//     // argument is the Buffer with the template, and the data object with any
-//     // replacements, currently the unit file is the only "real" template
-//     serverFiles.set(path.join(DIST_DIR, "server-config", `${props.cfg.servername}_SandboxVars.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_SandboxVars.lua`), d: {} })
-//     serverFiles.set(path.join(DIST_DIR, "server-config", `${props.cfg.servername}_spawnpoints.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_spawnpoints.lua`), d: {} })
-//     serverFiles.set(path.join(DIST_DIR, "server-config", `${props.cfg.servername}_spawnregions.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_spawnregions.lua`), d: {} })
-
-//     // Only this unit file supports templates
-//     serverFiles.set(path.join(DIST_DIR, "server-config", `${props.cfg.servername}.ini`,), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_server.ini`), d: serverFileConfig })
-//     serverFiles.set(path.join(DIST_DIR, `${props.cfg.servername}.service`,), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_service.service`), d: unitFileConfig })
