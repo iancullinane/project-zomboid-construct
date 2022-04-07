@@ -127,9 +127,9 @@ export class GameServerStack extends Construct implements ITaggable {
       `mkfs -t xfs /dev/xvdf`,
       `mkdir /mnt/${props.game.servername}`,
       `mount /dev/xvdf /mnt/${props.game.servername}`,
-      `sudo cp /etc/fstab /etc/fstab.orig`,
-      `blkid | egrep "/dev/xvdf: UUID="`,
-      `echo "UUID=xxx  /mnt/${props.game.servername}  xfs  defaults,nofail  0  2" >> /etc/fstab`,
+      // `sudo cp /etc/fstab /etc/fstab.orig`,
+      // `blkid | egrep "/dev/xvdf: UUID="`,
+      // `echo "UUID=xxx  /mnt/${props.game.servername}  xfs  defaults,nofail  0  2" >> /etc/fstab`,
     );
 
 
