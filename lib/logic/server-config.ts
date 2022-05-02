@@ -79,7 +79,7 @@ export function buildServerConfig(userData: ec2.UserData, cfg: GameConfig): Conf
       heli: 3,
       meta_event: 2,
       ch_points: 5,
-      fire_spread: false,
+      // fire_spread: false, // TODO::Undertand bools in this context
       zed_speed: 2,
       zed_strength: 3,
       zed_touch: 2,
@@ -97,7 +97,7 @@ export function buildServerConfig(userData: ec2.UserData, cfg: GameConfig): Conf
       zed_start_mult: 1.0,
       zed_peak_mult: 2.5,
       zed_peak_day: 40,
-      zed_spawn_mult: 0.1,
+      zed_spawn_mult: 0.1
     }
   };
 

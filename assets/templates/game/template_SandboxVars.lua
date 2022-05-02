@@ -347,7 +347,7 @@ SandboxVars = {
     -- 2 = Slow
     -- 3 = Normal
     ClothingDegradation = 2,
-    FireSpread = {{ config.fire_spread }},
+    FireSpread = false,
     -- Number of in-game days before rotten food is removed from the map. -1 means rotten food is never removed. Minimum=-1 Maximum=2147483647 Default=-1
     DaysForRottenFoodRemoval = -1,
     -- If enabled, generators will work on exterior tiles, allowing for example to power gas pump.
