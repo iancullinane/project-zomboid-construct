@@ -6,9 +6,9 @@ SandboxVars = {
     -- 3 = High
     -- 4 = Normal
     -- 5 = Low
-    Zombies = 3,
+    Zombies = {{ config.zombies }},
     -- 1 = Urban Focused
-    Distribution = 1,
+    Distribution = {{ config.distribution }},
     -- 1 = 15 Minutes
     -- 2 = 30 Minutes
     -- 3 = 1 Hour
@@ -65,7 +65,7 @@ SandboxVars = {
     -- 5 = 0-1 Year
     -- 6 = 0-5 Years
     -- 7 = 2-6 Months
-    WaterShut = 7,
+    WaterShut = {{ config.water_shut }},
     -- 1 = Instant
     -- 2 = 0-30 Days
     -- 3 = 0-2 Months
@@ -73,62 +73,62 @@ SandboxVars = {
     -- 5 = 0-1 Year
     -- 6 = 0-5 Years
     -- 7 = 2-6 Months
-    ElecShut = 7,
+    ElecShut = {{ config.elec_shut }},
     -- Minimum=-1 Maximum=2147483647 Default=14
-    WaterShutModifier = 60,
+    WaterShutModifier = {{ config.water_mod }},
     -- Minimum=-1 Maximum=2147483647 Default=14
-    ElecShutModifier = 45,
+    ElecShutModifier = {{ config.elec_mod }},
     -- 1 = Extremely Rare
     -- 2 = Rare
     -- 3 = Normal
     -- 4 = Common
-    FoodLoot = 3,
+    FoodLoot = {{ config.food_loot }},
     -- 1 = Extremely Rare
     -- 2 = Rare
     -- 3 = Normal
     -- 4 = Common
-    CannedFoodLoot = 2,
+    CannedFoodLoot = {{ config.canned_loot }},
     -- 1 = Extremely Rare
     -- 2 = Rare
     -- 3 = Normal
     -- 4 = Common
-    LiteratureLoot = 3,
+    LiteratureLoot = {{ config.lit_loot }},
     -- Seeds, Nails, Saws, Fishing Rods, various tools, etc...
     -- 1 = Extremely Rare
     -- 2 = Rare
     -- 3 = Normal
     -- 4 = Common
-    SurvivalGearsLoot = 2,
+    SurvivalGearsLoot = {{ config.survival_loot }},
     -- 1 = Extremely Rare
     -- 2 = Rare
     -- 3 = Normal
     -- 4 = Common
-    MedicalLoot = 2,
+    MedicalLoot = {{ config.medical_loot }},
     -- 1 = Extremely Rare
     -- 2 = Rare
     -- 3 = Normal
     -- 4 = Common
-    WeaponLoot = 3,
+    WeaponLoot = {{ config.weapon_loot }},
     -- 1 = Extremely Rare
     -- 2 = Rare
     -- 3 = Normal
     -- 4 = Common
-    RangedWeaponLoot = 3,
+    RangedWeaponLoot = {{ config.ranged_loot }},
     -- 1 = Extremely Rare
     -- 2 = Rare
     -- 3 = Normal
     -- 4 = Common
-    AmmoLoot = 4,
+    AmmoLoot = {{ config.ammo_loot }},
     -- 1 = Extremely Rare
     -- 2 = Rare
     -- 3 = Normal
     -- 4 = Common
-    MechanicsLoot = 1,
+    MechanicsLoot = {{ config.mechanic_loot }},
     -- 1 = Extremely Rare
     -- 2 = Rare
     -- 3 = Normal
     -- 4 = Common
-    OtherLoot = 4,
+    OtherLoot = {{ config.other_loot }},
     -- Controls the global temperature.
     -- 1 = Very Cold
     -- 2 = Cold
@@ -146,11 +146,11 @@ SandboxVars = {
     -- 2 = Fast (50 Days)
     -- 3 = Normal (100 Days)
     -- 4 = Slow (200 Days)
-    ErosionSpeed = 3,
+    ErosionSpeed = {{ config.erosion_speed }},
     -- Number of days until 100% growth. -1 means no growth. Zero means use the Erosion Speed option. Maximum 36,500 (100 years). Minimum=-1 Maximum=36500 Default=0
-    ErosionDays = 365,
+    ErosionDays = {{ config.erosion_days }},
     -- Modifies the base XP gain from actions by this number. Minimum=0.00 Maximum=1000.00 Default=1.00
-    XpMultiplier = 2.0,
+    XpMultiplier = {{ config.xp_mult }},
     -- Use this to multiply or reduce engine general loudness. Minimum=0.00 Maximum=100.00 Default=1.00
     ZombieAttractionMultiplier = 1.0,
     -- Governs whether cars are locked, need keys to start etc.
@@ -216,7 +216,7 @@ SandboxVars = {
     -- 2 = Every Day
     -- 3 = Every Week
     -- 4 = Every Month
-    LootRespawn = 3,
+    LootRespawn = {{ config.loot_respawn }},
     -- When > 0, loot will not respawn in zones that have been visited within this number of in-game hours. Minimum=0 Maximum=2147483647 Default=0
     SeenHoursPreventLootRespawn = 720,
     -- A comma-separated list of item types that will be removed after HoursForWorldItemRemoval hours.
@@ -261,11 +261,11 @@ SandboxVars = {
     -- 1 = Never
     -- 2 = Once
     -- 3 = Sometimes
-    Helicopter = 3,
+    Helicopter = {{ config.heli }},
     -- How often zombie attracting metagame events like distant gunshots will occur.
     -- 1 = Never
     -- 2 = Sometimes
-    MetaEvent = 2,
+    MetaEvent = {{ config.meta_event }},
     -- Governs night-time metagame events during the player's sleep.
     -- 1 = Never
     -- 2 = Sometimes
@@ -347,7 +347,7 @@ SandboxVars = {
     -- 2 = Slow
     -- 3 = Normal
     ClothingDegradation = 2,
-    FireSpread = false,
+    FireSpread = {{ config.fire_spread }},
     -- Number of in-game days before rotten food is removed from the map. -1 means rotten food is never removed. Minimum=-1 Maximum=2147483647 Default=-1
     DaysForRottenFoodRemoval = -1,
     -- If enabled, generators will work on exterior tiles, allowing for example to power gas pump.
@@ -457,17 +457,17 @@ SandboxVars = {
         -- 1 = Superhuman
         -- 2 = Normal
         -- 3 = Weak
-        Strength = 2,
+        Strength = {{ config.zed_strength }},
         -- Controls the difficulty to kill zombies.
         -- 1 = Tough
         -- 2 = Normal
         -- 3 = Fragile
-        Toughness = 3,
+        Toughness = {{ config.zed_touch }},
         -- Controls how the zombie virus spreads.
         -- 1 = Blood + Saliva
         -- 2 = Saliva Only
         -- 3 = Everyone's Infected
-        Transmission = 1,
+        Transmission = {{ config.zed_transmission }},
         -- Controls how quickly the infection takes effect.
         -- 1 = Instant
         -- 2 = 0-30 Seconds
@@ -475,19 +475,19 @@ SandboxVars = {
         -- 4 = 0-12 Hours
         -- 5 = 2-3 Days
         -- 6 = 1-2 Weeks
-        Mortality = 4,
+        Mortality = {{ config.zed_mortality }},
         -- Controls how quickly corpses rise as zombies.
         -- 1 = Instant
         -- 2 = 0-30 Seconds
         -- 3 = 0-1 Minutes
         -- 4 = 0-12 Hours
         -- 5 = 2-3 Days
-        Reanimate = 4,
+        Reanimate = {{ config.zed_reanimate }},
         -- Controls zombie intelligence.
         -- 1 = Navigate + Use Doors
         -- 2 = Navigate
         -- 3 = Basic Navigation
-        Cognition = 2,
+        Cognition = {{ config.zed_cognition }},
         -- Controls which zombies can crawl under vehicles.
         -- 1 = Crawlers Only
         -- 2 = Extremely Rare
@@ -495,25 +495,25 @@ SandboxVars = {
         -- 4 = Sometimes
         -- 5 = Often
         -- 6 = Very Often
-        CrawlUnderVehicle = 4,
+        CrawlUnderVehicle = {{ config.zed_crawl }},
         -- Controls how long zombies remember players after seeing or hearing.
         -- 1 = Long
         -- 2 = Normal
         -- 3 = Short
-        Memory = 3,
+        Memory = {{ config.zed_memory }},
         -- Controls the effects of decomposition over time.
         -- 1 = Slows + Weakens
         -- 2 = Slows
         -- 3 = Weakens
-        Decomp = 3,
+        Decomp = {{ config.zed_decomp }},
         -- Controls zombie vision radius.
         -- 1 = Eagle
         -- 2 = Normal
-        Sight = 2,
+        Sight = {{ config.zed_sight }},
         -- Controls zombie hearing radius.
         -- 1 = Pinpoint
         -- 2 = Normal
-        Hearing = 2,
+        Hearing = {{ config.zed_hearing }},
         -- Zombies that have not seen/heard player can attack doors and constructions while roaming.
         ThumpNoChasing = false,
         -- Governs whether or not zombies can destroy player constructions and defences.
@@ -521,7 +521,7 @@ SandboxVars = {
         -- Governs whether zombies are more active during the day, or whether they act more nocturnally.  Active zombies will use the speed set in the "Speed" setting. Inactive zombies will be slower, and tend not to give chase.
         -- 1 = Both
         -- 2 = Night
-        ActiveOnly = 2,
+        ActiveOnly = {{ config.zed_active }},
         -- Allows zombies to trigger house alarms when breaking through windows and doors.
         TriggerHouseAlarm = true,
         -- When enabled if multiple zombies are attacking they can drag you down to feed. Dependent on zombie strength.
@@ -531,19 +531,19 @@ SandboxVars = {
     },
     ZombieConfig = {
         -- Set by the "Zombie Count" population option. 4.0 = Insane, Very High = 3.0, 2.0 = High, 1.0 = Normal, 0.35 = Low, 0.0 = None. Minimum=0.00 Maximum=4.00 Default=1.00
-        PopulationMultiplier = {{ config.pop }},
+        PopulationMultiplier = {{ config.zed_pop_mult }},
         -- Adjusts the desired population at the start of the game. Minimum=0.00 Maximum=4.00 Default=1.00
-        PopulationStartMultiplier = 1.0,
+        PopulationStartMultiplier = {{ config.zed_start_mult }},
         -- Adjusts the desired population on the peak day. Minimum=0.00 Maximum=4.00 Default=1.50
-        PopulationPeakMultiplier = {{ config.peak }},
+        PopulationPeakMultiplier = {{ config.zed_peak_mult }},
         -- The day when the population reaches it's peak. Minimum=1 Maximum=365 Default=28
-        PopulationPeakDay = 40,
+        PopulationPeakDay = {{ config.zed_peak_day }},
         -- The number of hours that must pass before zombies may respawn in a cell. If zero, spawning is disabled. Minimum=0.00 Maximum=8760.00 Default=72.00
         RespawnHours = 240.0,
         -- The number of hours that a chunk must be unseen before zombies may respawn in it. Minimum=0.00 Maximum=8760.00 Default=16.00
         RespawnUnseenHours = 24.0,
         -- The fraction of a cell's desired population that may respawn every RespawnHours. Minimum=0.00 Maximum=1.00 Default=0.10
-        RespawnMultiplier = 0.1,
+        RespawnMultiplier = {{ config.zed_spawn_mult }},
         -- The number of hours that must pass before zombies migrate to empty parts of the same cell. If zero, migration is disabled. Minimum=0.00 Maximum=8760.00 Default=12.00
         RedistributeHours = 12.0,
         -- The distance a zombie will try to walk towards the last sound it heard. Minimum=10 Maximum=1000 Default=100
