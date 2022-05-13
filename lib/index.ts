@@ -15,7 +15,7 @@ import { ZomboidAccess } from "./components/zomboid-access"
 export const TEMPLATE_DIR = path.join(__dirname, "..", "assets", "templates")
 export const DIST_DIR = path.join(process.cwd(), "assets", "dist")
 
-path.join(process.cwd(), "assets")
+// path.join(process.cwd(), "assets")
 export interface GameServerProps {
   game: GameConfig,
   infra: InfraConfig,
@@ -67,12 +67,12 @@ export class GameServerStack extends Construct implements ITaggable {
     );
 
     // TODO::Give role route53:ChangeResourceRecordSets on arn::HostedZoneId
-    props.infra.role.attachInlinePolicy(new iam.Policy(this, `${props.game.servername}-ebs-policy`, {
-      statements: [new iam.PolicyStatement({
-        actions: ['route53:ChangeResourceRecordSets'],
-        resources: [props.infra.hz.hostedZoneArn],
-      })],
-    }))
+    // props.infra.role.attachInlinePolicy(new iam.Policy(this, `${props.game.servername}-ebs-policy`, {
+    //   statements: [new iam.PolicyStatement({
+    //     actions: ['route53:ChangeResourceRecordSets'],
+    //     resources: [props.infra.hz.hostedZoneArn],
+    //   })],
+    // }))
 
     this.userData = new ec2.MultipartUserData;
     const setupCommands = ec2.UserData.forLinux();
@@ -170,7 +170,7 @@ export class GameServerStack extends Construct implements ITaggable {
       bucketKey: unitFileDir.s3ObjectKey!,
       localFile: `/mnt/${props.game.servername}/files/`,
     });
-
+    // https://steamcommunity.com/sharedfiles/filedetails/?id=2775004377&searchtext=
     // This will be a single object because it is a filename
     // this.userData.addS3DownloadCommand({
     //   bucket: s3UnitFile.bucket!,

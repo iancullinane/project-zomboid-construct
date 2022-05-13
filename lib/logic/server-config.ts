@@ -21,18 +21,6 @@ export interface TemplateBuilder {
   d: Data,
 }
 
-
-
-function getTemplate(fileName: string): TemplateBuilder {
-  // let t = TemplateBuilder{ b: fs.readFileSync(`${TEMPLATE_DIR}/template_SandboxVars.lua`), d: { }}
-  let t = {
-    b: fs.readFileSync(`${TEMPLATE_DIR}/template${fileName}`),
-    d: {}
-  };
-  return t
-};
-
-
 export function buildServerConfig(userData: ec2.UserData, cfg: GameConfig): Config {
 
   const unitFileConfig = {
@@ -54,53 +42,6 @@ export function buildServerConfig(userData: ec2.UserData, cfg: GameConfig): Conf
     }
   }
 
-  let sandboxFileConfig = {
-    config: {
-      zombies: 4,
-      distribution: 1,
-      water_shut: 4,
-      elec_shut: 4,
-      water_mod: 30,
-      elec_mod: 30,
-      food_loot: 3,
-      canned_loot: 3,
-      lit_loot: 4,
-      survival_loot: 2,
-      medical_loot: 2,
-      weapon_loot: 3,
-      ranged_loot: 3,
-      ammo_loot: 3,
-      mechanic_loot: 2,
-      other_loot: 4,
-      erosion_speed: 3,
-      erosion_days: 0,
-      xp_mult: 2.0,
-      loot_respawn: 4,
-      heli: 3,
-      meta_event: 2,
-      ch_points: 5,
-      // fire_spread: false, // TODO::Undertand bools in this context
-      zed_speed: 2,
-      zed_strength: 3,
-      zed_touch: 2,
-      zed_transmission: 1,
-      zed_mortality: 4,
-      zed_reanimate: 3,
-      zed_cognition: 2,
-      zed_crawl: 4,
-      zed_memory: 3,
-      zed_decomp: 3,
-      zed_sight: 2,
-      zed_hearing: 2,
-      zed_active: 2,
-      zed_pop_mult: 1.0,
-      zed_start_mult: 1.0,
-      zed_peak_mult: 2.5,
-      zed_peak_day: 40,
-      zed_spawn_mult: 0.1
-    }
-  };
-
   let serverFiles = new Map<string, TemplateBuilder>();
 
   serverFiles.set(
@@ -110,10 +51,7 @@ export function buildServerConfig(userData: ec2.UserData, cfg: GameConfig): Conf
 
   serverFiles.set(path.join(DIST_DIR, "server-config", `${cfg.servername}_spawnpoints.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/game/template_spawnpoints.lua`), d: {} });
   serverFiles.set(path.join(DIST_DIR, "server-config", `${cfg.servername}_spawnregions.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/game/template_spawnregions.lua`), d: {} });
-
-  // t file supports templates
   serverFiles.set(path.join(DIST_DIR, "server-config", `${cfg.servername}.ini`,), { b: fs.readFileSync(`${TEMPLATE_DIR}/game/template_server.ini`), d: serverFileConfig })
-
   serverFiles.set(path.join(DIST_DIR, "units", `${cfg.servername}.service`,), { b: fs.readFileSync(`${TEMPLATE_DIR}/units/template_service.service`), d: unitFileConfig })
   serverFiles.set(path.join(DIST_DIR, "units", "ebs-unit.service"), { b: fs.readFileSync(`${TEMPLATE_DIR}/units/ebs-unit.service`), d: {} })
   serverFiles.set(path.join(DIST_DIR, "units", "r53-unit.service"), { b: fs.readFileSync(`${TEMPLATE_DIR}/units/r53-unit.service`), d: {} })
@@ -122,6 +60,10 @@ export function buildServerConfig(userData: ec2.UserData, cfg: GameConfig): Conf
   serverFiles.forEach((tmpl, k) => {
     writeFileFromTemplate(k, tmpl.b, tmpl.d)
   })
+
+  // ///////
+  // something to
+  // mount /dev/xvdf /mnt/braveadventure/
 
   let addUsers: string[] = [
     `echo "---- Add users"`,
@@ -193,3 +135,13 @@ export function parseMods(modFile: Buffer): { mods: Array<string>, ids: Array<st
     ids,
   }
 }
+
+
+// function getTemplate(fileName: string): TemplateBuilder {
+//   // let t = TemplateBuilder{ b: fs.readFileSync(`${TEMPLATE_DIR}/template_SandboxVars.lua`), d: { }}
+//   let t = {
+//     b: fs.readFileSync(`${TEMPLATE_DIR}/template${fileName}`),
+//     d: {}
+//   };
+//   return t
+// };
