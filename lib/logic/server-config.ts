@@ -1,35 +1,13 @@
 /// <reference path="../index.ts" />
-
 // This could or maybe should be its own package, but for simplicity and because
 // this is for personal user, I am leaving it here
-import * as fs from "fs";
-import * as path from "path";
-
 import * as ec2 from "aws-cdk-lib/aws-ec2";
-import { render, Data } from "template-file"
-import { DIST_DIR, TEMPLATE_DIR, GameConfig, InfraConfig } from "../index"
+import { GameConfig } from "../index"
+import { sandboxFileConfig, unitFileConfig } from "./types";
+import { FileMaker } from "./file-config";
 
 
-export interface Config {
-  userData: ec2.UserData
-}
-
-// TemplateBuilder is a Buffer holding a template file, and a data object to 
-// hold its values for replacement
-export interface TemplateBuilder {
-  b: Buffer,
-  d: Data,
-}
-
-export function buildServerConfig(userData: ec2.UserData, cfg: GameConfig): Config {
-
-  const unitFileConfig = {
-    config: {
-      servername: cfg.servername!,
-      adminPW: "PasswordXYZ",
-      cachedir: `/mnt/${cfg.servername}`
-    }
-  }
+export function buildServerConfig(userData: ec2.UserData, cfg: GameConfig) {
 
   let serverFileConfig = {};
   if (cfg.modFile !== null) {
@@ -42,28 +20,17 @@ export function buildServerConfig(userData: ec2.UserData, cfg: GameConfig): Conf
     }
   }
 
-  let serverFiles = new Map<string, TemplateBuilder>();
+  let fm = new FileMaker()
+  // let serverFiles = new Map<string, TemplateBuilder>();
+  fm.addFile(`${cfg.servername}_SandboxVars.lua`, "server-config", cfg.servername!, sandboxFileConfig)
+  fm.addFile(`${cfg.servername}_spawnpoints.lua`, "server-config", cfg.servername!, {})
+  fm.addFile(`${cfg.servername}_spawnregions.lua`, "server-config", cfg.servername!, {})
+  fm.addFile(`${cfg.servername}.ini`, "server-config", cfg.servername!, serverFileConfig)
+  fm.addFile(`${cfg.servername}.service`, "units", `${cfg.servername}.service`, unitFileConfig)
+  fm.addFile(`ebs-unit.service`, "units", `${cfg.servername}.service`, {})
+  fm.addFile(`r53-unit.service`, "units", `${cfg.servername}.service`, {})
 
-  serverFiles.set(
-    path.join(DIST_DIR, "server-config", `${cfg.servername}_SandboxVars.lua`),
-    { b: fs.readFileSync(`${TEMPLATE_DIR}/game/template_SandboxVars.lua`), d: sandboxFileConfig }
-  );
-
-  serverFiles.set(path.join(DIST_DIR, "server-config", `${cfg.servername}_spawnpoints.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/game/template_spawnpoints.lua`), d: {} });
-  serverFiles.set(path.join(DIST_DIR, "server-config", `${cfg.servername}_spawnregions.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/game/template_spawnregions.lua`), d: {} });
-  serverFiles.set(path.join(DIST_DIR, "server-config", `${cfg.servername}.ini`,), { b: fs.readFileSync(`${TEMPLATE_DIR}/game/template_server.ini`), d: serverFileConfig })
-  serverFiles.set(path.join(DIST_DIR, "units", `${cfg.servername}.service`,), { b: fs.readFileSync(`${TEMPLATE_DIR}/units/template_service.service`), d: unitFileConfig })
-  serverFiles.set(path.join(DIST_DIR, "units", "ebs-unit.service"), { b: fs.readFileSync(`${TEMPLATE_DIR}/units/ebs-unit.service`), d: {} })
-  serverFiles.set(path.join(DIST_DIR, "units", "r53-unit.service"), { b: fs.readFileSync(`${TEMPLATE_DIR}/units/r53-unit.service`), d: {} })
-
-  // todo::interface configs into data and be clever
-  serverFiles.forEach((tmpl, k) => {
-    writeFileFromTemplate(k, tmpl.b, tmpl.d)
-  })
-
-  // ///////
-  // something to
-  // mount /dev/xvdf /mnt/braveadventure/
+  fm.writeFiles()
 
   let addUsers: string[] = [
     `echo "---- Add users"`,
@@ -90,29 +57,13 @@ export function buildServerConfig(userData: ec2.UserData, cfg: GameConfig): Conf
   // userData.addCommands(...updateDebian);
   userData.addCommands(...addUsers);
   userData.addCommands(...installCommands);
-
-  return {
-    userData
-  }
-
 }
 
-// writeFileFromTemplate takes a path (should be your dist path) and renders
-// a template from the buffer and data
-export function writeFileFromTemplate(path: string, template: Buffer, data: Data) {
-  var rendered = render(template.toString(), data);
-  try {
-    if (template) {
-      fs.writeFileSync(path, rendered)
-    }
-  } catch (e) {
-    console.log("Error writing file")
-  }
-}
+
 
 // parseMods is a helper for generating two arrays, one a list of mods, and the
 // other a list of mod ids which match their partner in the other list
-export function parseMods(modFile: Buffer): { mods: Array<string>, ids: Array<string> } {
+function parseMods(modFile: Buffer): { mods: Array<string>, ids: Array<string> } {
 
   var modInstallArray = Array<string>();
   var ids = Array<string>()
@@ -136,12 +87,3 @@ export function parseMods(modFile: Buffer): { mods: Array<string>, ids: Array<st
   }
 }
 
-
-// function getTemplate(fileName: string): TemplateBuilder {
-//   // let t = TemplateBuilder{ b: fs.readFileSync(`${TEMPLATE_DIR}/template_SandboxVars.lua`), d: { }}
-//   let t = {
-//     b: fs.readFileSync(`${TEMPLATE_DIR}/template${fileName}`),
-//     d: {}
-//   };
-//   return t
-// };

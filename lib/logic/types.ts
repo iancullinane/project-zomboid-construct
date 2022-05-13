@@ -1,4 +1,12 @@
-const sandboxFileConfig = {
+export const unitFileConfig = {
+  config: {
+    servername: "default",
+    adminPW: "PasswordXYZ",
+    cachedir: `/mnt/default`
+  }
+}
+
+export const sandboxFileConfig = {
   config: {
     zombies: 4,
     distribution: 1,

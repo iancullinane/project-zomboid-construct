@@ -66,6 +66,11 @@ export class GameServerStack extends Construct implements ITaggable {
       iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonSSMManagedInstanceCore")
     );
 
+    // ssm steps for userdata
+    // sudo snap switch --channel=candidate amazon-ssm-agent
+    // sudo snap install amazon-ssm-agent --classic
+    // 
+
     // TODO::Give role route53:ChangeResourceRecordSets on arn::HostedZoneId
     // props.infra.role.attachInlinePolicy(new iam.Policy(this, `${props.game.servername}-ebs-policy`, {
     //   statements: [new iam.PolicyStatement({
@@ -103,6 +108,7 @@ export class GameServerStack extends Construct implements ITaggable {
       // User data can only be mutated via its functions past this point
       userData: this.userData,
     });
+    Tags.of(instance).add("Name", `${props.game.servername}`);
     Tags.of(instance).add("game", `pz-${props.game.servername}`);
 
     // See the docs on this method for more info:
@@ -127,9 +133,7 @@ export class GameServerStack extends Construct implements ITaggable {
       `mkfs -t xfs /dev/xvdf`,
       `mkdir /mnt/${props.game.servername}`,
       `mount /dev/xvdf /mnt/${props.game.servername}`,
-      // `sudo cp /etc/fstab /etc/fstab.orig`,
-      // `blkid | egrep "/dev/xvdf: UUID="`,
-      // `echo "UUID=xxx  /mnt/${props.game.servername}  xfs  defaults,nofail  0  2" >> /etc/fstab`,
+      `echo "UUID=$(lsblk -o +UUID | grep thepain | awk '{print $8}') /mnt/${props.game.servername}  xfs  defaults,nofail  0  2" >> /etc/fstab`,
     );
 
 
@@ -141,10 +145,6 @@ export class GameServerStack extends Construct implements ITaggable {
       props.game
     );
 
-    // const s3UnitFile = new Asset(this, "pz-unit-file", {
-    //   path: path.join(DIST_DIR, `${props.game.servername}.service`),
-    // });
-    // s3UnitFile.grantRead(props.infra.role);
 
     const serverConfigDir = new Asset(this, "pz-config-dir", {
       path: path.join(DIST_DIR, "server-config"),
@@ -170,14 +170,6 @@ export class GameServerStack extends Construct implements ITaggable {
       bucketKey: unitFileDir.s3ObjectKey!,
       localFile: `/mnt/${props.game.servername}/files/`,
     });
-    // https://steamcommunity.com/sharedfiles/filedetails/?id=2775004377&searchtext=
-    // This will be a single object because it is a filename
-    // this.userData.addS3DownloadCommand({
-    //   bucket: s3UnitFile.bucket!,
-    //   bucketKey: s3UnitFile.s3ObjectKey!,
-    //   localFile: `/etc/systemd/system/${props.game.servername}.service`,
-    // });
-
 
     // Place, enable, and start the service
     instance.userData.addCommands(
@@ -185,11 +177,11 @@ export class GameServerStack extends Construct implements ITaggable {
       `unzip /mnt/${props.game.servername}/files/${serverConfigDir.s3ObjectKey} -d /mnt/${props.game.servername}/Server/`,
       `unzip /mnt/${props.game.servername}/files/${unitFileDir.s3ObjectKey} -d /etc/systemd/system/`,
       `chmod +x /etc/systemd/system/${props.game.servername}.service`,
-      `systemctl enable ${props.game.servername}.service`,
-      `systemctl start ${props.game.servername}.service`,
     );
 
     instance.userData.addCommands(
+      `systemctl enable ${props.game.servername}.service`,
+      `systemctl start ${props.game.servername}.service`,
       `systemctl enable ebs-unit.service`,
       `systemctl start ebs-unit.service`,
       `systemctl enable r53-unit.service`,
