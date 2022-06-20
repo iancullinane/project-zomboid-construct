@@ -17,8 +17,14 @@ export class FileMaker {
     this.files = new Map<string, TemplateBuilder>();
   }
 
+  //   `${cfg.servername}_SandboxVars.lua
+  // `${cfg.servername}_spawnpoints.lua
+  // `${cfg.servername}_spawnregions.lua
+  // `${cfg.servername}.ini
+  // `${cfg.servername}.service
+
   public addFile(fileName: string, assetType: string, serverName: string, d: Data) {
-    let key = path.join(DIST_DIR, assetType, `${serverName}${fileName}`)
+    let key = path.join(DIST_DIR, assetType, `${serverName}_${fileName}`)
     let object = { b: fs.readFileSync(`${TEMPLATE_DIR}/${assetType}/template_${fileName}`), d: d }
     this.files.set(key, object);
   }

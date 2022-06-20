@@ -21,7 +21,7 @@ export interface GameServerProps {
   infra: InfraConfig,
 }
 
-export interface InfraConfig {
+export type InfraConfig = {
   region: string,
   keyName: string;
   role: iam.IRole,
@@ -33,7 +33,7 @@ export interface InfraConfig {
   instancetype?: string,
 }
 
-export interface GameConfig {
+export type GameConfig = {
   distdir: string,
   servername?: string,
   modFile?: Buffer,
@@ -248,14 +248,14 @@ export class GameServerStack extends Construct implements ITaggable {
       pzHz = props.infra.hz;
     }
 
-    new r53.ARecord(this, "PzARecordB", {
+    new r53.ARecord(this, `PzARecordB-${props.game.servername}`, {
       zone: pzHz!,
       target: r53.RecordTarget.fromIpAddresses(instance.instancePublicIp),
     });
 
 
     // Create outputs for connecting
-    new CfnOutput(this, `IP Address-${props.game.servername}`, {
+    new CfnOutput(this, `IPAddress-${props.game.servername}`, {
       value: instance.instancePublicIp,
       exportName: `${props.game.servername}-IP-Address`
     });

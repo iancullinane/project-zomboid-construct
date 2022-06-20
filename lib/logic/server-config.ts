@@ -22,11 +22,11 @@ export function buildServerConfig(userData: ec2.UserData, cfg: GameConfig) {
 
   let fm = new FileMaker()
   // let serverFiles = new Map<string, TemplateBuilder>();
-  fm.addFile(`${cfg.servername}_SandboxVars.lua`, "server-config", cfg.servername!, sandboxFileConfig)
-  fm.addFile(`${cfg.servername}_spawnpoints.lua`, "server-config", cfg.servername!, {})
-  fm.addFile(`${cfg.servername}_spawnregions.lua`, "server-config", cfg.servername!, {})
-  fm.addFile(`${cfg.servername}.ini`, "server-config", cfg.servername!, serverFileConfig)
-  fm.addFile(`${cfg.servername}.service`, "units", `${cfg.servername}.service`, unitFileConfig)
+  fm.addFile(`SandboxVars.lua`, "server-config", cfg.servername!, sandboxFileConfig)
+  fm.addFile(`spawnpoints.lua`, "server-config", cfg.servername!, {})
+  fm.addFile(`spawnregions.lua`, "server-config", cfg.servername!, {})
+  fm.addFile(`server.ini`, "server-config", cfg.servername!, serverFileConfig)
+  fm.addFile(`service.service`, "units", `${cfg.servername}.service`, unitFileConfig)
   fm.addFile(`ebs-unit.service`, "units", `${cfg.servername}.service`, {})
   fm.addFile(`r53-unit.service`, "units", `${cfg.servername}.service`, {})
 
