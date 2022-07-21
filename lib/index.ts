@@ -29,6 +29,7 @@ export type InfraConfig = {
   role: iam.IRole,
   hz: r53.IHostedZone,
   instancetype?: string,
+  keyPair?: string,
 
   // keyName: string;
   // subdomain?: string,
@@ -107,7 +108,7 @@ export class GameServerStack extends Construct implements ITaggable {
       vpcSubnets: {
         subnetType: props.game.public === true || undefined ? ec2.SubnetType.PUBLIC : ec2.SubnetType.PRIVATE_WITH_NAT,
       },
-      keyName: props.infra.key.keyArn,
+      keyName: props.infra.keyPair,
       securityGroup: serverSG,
       role: props.infra.role,
       // User data can only be mutated via its functions past this point

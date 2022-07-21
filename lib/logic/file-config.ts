@@ -17,7 +17,7 @@ export class FileMaker {
     this.files = new Map<string, TemplateBuilder>();
   }
 
-  //   `${cfg.servername}_SandboxVars.lua
+  // `${cfg.servername}_SandboxVars.lua
   // `${cfg.servername}_spawnpoints.lua
   // `${cfg.servername}_spawnregions.lua
   // `${cfg.servername}.ini
