@@ -133,9 +133,9 @@ export class GameServerStack extends Construct implements ITaggable {
     const targetDevice = '/dev/xvdf';
     instance.userData.addCommands(
       // Retrieve token for accessing EC2 instance metadata (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-data-retrieval.html)
-      `TOKEN = $(curl SsfX PUT "http://169.254.169.254/latest/api/token" - H "X-aws-ec2-metadata-token-ttl-seconds: 21600")`,
+      `TOKEN=$(curl -SsfX PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")`,
       // Retrieve the instance Id of the current EC2 instance
-      `INSTANCE_ID = $(curl SsfH "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id)`,
+      `INSTANCE_ID=$(curl -SsfH "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id)`,
       // Attach the volume to /dev/xvdz
       `aws --region ${Stack.of(this).region} ec2 attach-volume --volume-id ${vol.volumeId} --instance-id $INSTANCE_ID --device ${targetDevice}`,
       // Wait until the volume has attached
@@ -268,6 +268,8 @@ export class GameServerStack extends Construct implements ITaggable {
       target: r53.RecordTarget.fromIpAddresses(instance.instancePublicIp),
     });
 
+
+    console.log(this.userData);
 
     // Create outputs for connecting
     new CfnOutput(this, `IPAddress-${props.game.servername}`, {
