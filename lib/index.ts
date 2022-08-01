@@ -193,6 +193,8 @@ export class GameServerStack extends Construct implements ITaggable {
       `chmod +x /etc/systemd/system/${props.game.servername}.service`,
     );
 
+    console.log(`${props.game.servername}_service.service`)
+
     instance.userData.addCommands(
       `systemctl enable ${props.game.servername}.service`,
       `systemctl start ${props.game.servername}.service`,
