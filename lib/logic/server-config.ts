@@ -35,6 +35,7 @@ export function buildServerConfig(userData: ec2.UserData, cfg: GameConfig) {
   fm.addFile(`spawnpoints.lua`, "server-config", cfg.servername!, {})
   fm.addFile(`spawnregions.lua`, "server-config", cfg.servername!, {})
   fm.addFile(`server.ini`, "server-config", cfg.servername!, serverFileConfig)
+
   fm.addFile(`service.service`, "units", `${cfg.servername}`, unitServiceConfig)
   fm.addFile(`ebs-unit.service`, "units", `${cfg.servername}.service`, {})
   fm.addFile(`r53-unit.service`, "units", `${cfg.servername}.service`, {})

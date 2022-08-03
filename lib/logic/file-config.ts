@@ -23,6 +23,8 @@ export class FileMaker {
   // `${cfg.servername}.ini
   // `${cfg.servername}.service
 
+  // public addFile(fileName: string, assetType: string, serverName: string, d: Data) {}
+
   public addFile(fileName: string, assetType: string, serverName: string, d: Data) {
     let key = path.join(DIST_DIR, assetType, `${serverName}_${fileName}`)
     let object = { b: fs.readFileSync(`${TEMPLATE_DIR}/${assetType}/template_${fileName}`), d: d }

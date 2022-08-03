@@ -195,13 +195,14 @@ export class GameServerStack extends Construct implements ITaggable {
 
     console.log(`${props.game.servername}_service.service`)
 
+    // TODO fix up her'
     instance.userData.addCommands(
-      `systemctl enable ${props.game.servername}.service`,
-      `systemctl start ${props.game.servername}.service`,
-      `systemctl enable ebs-unit.service`,
-      `systemctl start ebs-unit.service`,
-      `systemctl enable r53-unit.service`,
-      `systemctl start r53-unit.service`,
+      `systemctl enable ${props.game.servername}_service.service`,
+      `systemctl start ${props.game.servername}_service.service`,
+      // `systemctl enable ebs-unit.service`,
+      // `systemctl start ebs-unit.service`,
+      // `systemctl enable r53-unit.service`,
+      // `systemctl start r53-unit.service`,
     );
 
     // Holder for pz sg's
