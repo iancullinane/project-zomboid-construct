@@ -1,4 +1,4 @@
-import { CfnOutput, ITaggable, TagManager, Tags } from "aws-cdk-lib";
+import { CfnOutput, ITaggable, TagManager, Tags, Size, Stack } from "aws-cdk-lib";
 import { Construct } from 'constructs';
 import { Asset } from "aws-cdk-lib/aws-s3-assets";
 
@@ -6,35 +6,43 @@ import * as fs from "fs";
 import * as path from "path";
 
 import * as ec2 from "aws-cdk-lib/aws-ec2";
+import * as kms from "aws-cdk-lib/aws-kms";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as r53 from "aws-cdk-lib/aws-route53";
 
 import * as logic from "./logic/server-config"
 import { ZomboidAccess } from "./components/zomboid-access"
 
-const TEMPLATE_DIR = path.join(__dirname, "..", "assets", "templates")
-const DIST_DIR = path.join(process.cwd(), "assets", "dist")
+export const TEMPLATE_DIR = path.join(__dirname, "..", "assets", "templates")
+export const DIST_DIR = path.join(process.cwd(), "assets", "dist")
 
-path.join(process.cwd(), "assets")
+// path.join(process.cwd(), "assets")
 export interface GameServerProps {
-  cfg: ServerConfig,
-  role: iam.IRole,
-  vpc: ec2.IVpc,
-  sg: ec2.ISecurityGroup,
-  hz: r53.IHostedZone,
+  game: GameConfig,
+  infra: InfraConfig,
 }
 
-export interface ServerConfig {
+export type InfraConfig = {
   region: string,
-  ami: string,
-  keyName: string;
-  servername?: string,
-  hostedzoneid: string;
-  subdomain?: string,
+  vpc: ec2.IVpc,
+  key: kms.IKey,
+  role: iam.IRole,
+  hz: r53.IHostedZone,
   instancetype?: string,
-  modFile?: Buffer,
-  public?: Boolean;
+  keyPair?: string,
+
+  // keyName: string;
+  // subdomain?: string,
+  // sg: ec2.ISecurityGroup,
+  // vol: ec2.IVolume,
+}
+
+export type GameConfig = {
+  servername?: string,
   fresh?: boolean,
+  public?: Boolean;
+  distdir: string,
+  modFile?: Buffer,
 }
 
 // Ubuntu 20.04 LTS
@@ -43,54 +51,40 @@ const amimap: Record<string, string> = {
   "us-east-1": "ami-0f5513ad02f8d23ed",
 }
 
-// const amimap = new Record<string, string>([
-// ]);
-
 export class GameServerStack extends Construct implements ITaggable {
 
-  public readonly userData: ec2.MultipartUserData;
+  public userData: ec2.MultipartUserData;
   public readonly tags: TagManager;
 
   constructor(scope: Construct, id: string, props: GameServerProps) {
     super(scope, id);
 
     // Ensure some values
-    props.cfg.servername === undefined ? props.cfg.servername = "servertest" : null;
-    props.cfg.instancetype === undefined ? props.cfg.instancetype = "t2.micro" : null;
-    props.cfg.fresh === undefined ? props.cfg.fresh = false : null;
+    props.game.servername === undefined ? props.game.servername = "servertest" : null;
+    props.game.fresh === undefined ? props.game.fresh = false : null;
+    props.infra.instancetype === undefined ? props.infra.instancetype = "t2.micro" : null;
 
-    const machineImage = ec2.MachineImage.genericLinux(amimap);
-    let serverFiles = new Map<string, logic.TemplateBuilder>();
+    // TODO::Think more about security groups
+    let serverSG = new ec2.SecurityGroup(this, "sg-id", {
+      vpc: props.infra.vpc,
+    })
 
-    const unitFileConfig = {
-      config: {
-        servername: props.cfg.servername!,
-        adminPW: "PasswordXYZ",
-        cachedir: "/home/steam/pz"
-      }
-    }
+    // Select an image type
 
-    let serverFileConfig = {};
-    if (props.cfg.modFile !== null) {
-      let { mods, ids } = logic.parseMods(props.cfg.modFile!)
-      serverFileConfig = {
-        config: {
-          mods: mods.join(";"),
-          ids: ids.join(";"),
-        }
-      }
-    }
-    // The key is the destination of the files, the object in the second 
-    // argument is the Buffer with the template, and the data object with any
-    // replacements, currently the unit file is the only "real" template
-    serverFiles.set(path.join(DIST_DIR, "server-config", `${props.cfg.servername}_SandboxVars.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_SandboxVars.lua`), d: {} })
-    serverFiles.set(path.join(DIST_DIR, "server-config", `${props.cfg.servername}_spawnpoints.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_spawnpoints.lua`), d: {} })
-    serverFiles.set(path.join(DIST_DIR, "server-config", `${props.cfg.servername}_spawnregions.lua`), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_spawnregions.lua`), d: {} })
+    // ssm steps for userdata
+    // sudo snap switch --channel=candidate amazon-ssm-agent
+    // sudo snap install amazon-ssm-agent --classic
+    // 
 
-    // Only this unit file supports templates
-    serverFiles.set(path.join(DIST_DIR, "server-config", `${props.cfg.servername}.ini`,), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_server.ini`), d: serverFileConfig })
-    serverFiles.set(path.join(DIST_DIR, `${props.cfg.servername}.service`,), { b: fs.readFileSync(`${TEMPLATE_DIR}/template_service.service`), d: unitFileConfig })
+    // TODO::Give role route53:ChangeResourceRecordSets on arn::HostedZoneId
+    // props.infra.role.attachInlinePolicy(new iam.Policy(this, `${props.game.servername}-ebs-policy`, {
+    //   statements: [new iam.PolicyStatement({
+    //     actions: ['route53:ChangeResourceRecordSets'],
+    //     resources: [props.infra.hz.hostedZoneArn],
+    //   })],
+    // }))
 
+    this.userData = new ec2.MultipartUserData;
     const setupCommands = ec2.UserData.forLinux();
     setupCommands.addCommands(
       `echo "---- Install deps"`,
@@ -100,75 +94,116 @@ export class GameServerStack extends Construct implements ITaggable {
       `sudo apt install -y lib32gcc1 libsdl2-2.0-0:i386 docker.io awscli unzip`
     );
 
-    this.userData = new ec2.MultipartUserData;
+    // You must set true for the third argument `makeDefault` in order to use
+    // the following multipart patterns
     this.userData.addUserDataPart(setupCommands, "", true);
+
+    const machineImage = ec2.MachineImage.genericLinux(amimap);
+
+    // ---- Build server
+    const instance = new ec2.Instance(this, "project-zomboid-ec2", {
+      instanceType: new ec2.InstanceType(props.infra.instancetype),
+      machineImage: machineImage,
+      vpc: props.infra.vpc,
+      vpcSubnets: {
+        subnetType: props.game.public === true || undefined ? ec2.SubnetType.PUBLIC : ec2.SubnetType.PRIVATE_WITH_NAT,
+      },
+      keyName: props.infra.keyPair,
+      securityGroup: serverSG,
+      role: props.infra.role,
+      // User data can only be mutated via its functions past this point
+      userData: this.userData,
+    });
+    Tags.of(instance).add("Name", `${props.game.servername}`);
+    Tags.of(instance).add("game", `pz-${props.game.servername}`);
+
+    // See the docs on this method for more info:
+    // https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_ec2.Volume.html#grantwbrattachwbrvolumewbrbywbrresourcewbrtaggrantee-constructs-tagkeysuffix
+
+    let vol = new ec2.Volume(this, `${props.game.servername}-vol`, {
+      availabilityZone: 'us-east-2a',
+      size: Size.gibibytes(20),
+    });
+    Tags.of(vol).add("game", `pz-${props.game.servername}-vol`);
+    Tags.of(vol).add("Name", `pz-${props.game.servername}-vol`);
+
+    vol.grantAttachVolumeByResourceTag(instance.grantPrincipal, [instance], "zomboid");
+
+    // TODO::Probably would not work multiple mounted volumes
+    const targetDevice = '/dev/xvdf';
+    instance.userData.addCommands(
+      // Retrieve token for accessing EC2 instance metadata (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-data-retrieval.html)
+      `TOKEN=$(curl -SsfX PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")`,
+      // Retrieve the instance Id of the current EC2 instance
+      `INSTANCE_ID=$(curl -SsfH "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id)`,
+      // Attach the volume to /dev/xvdz
+      `aws --region ${Stack.of(this).region} ec2 attach-volume --volume-id ${vol.volumeId} --instance-id $INSTANCE_ID --device ${targetDevice}`,
+      // Wait until the volume has attached
+      `while ! test -e ${targetDevice}; do sleep 1; done`
+      // The volume will now be mounted. You may have to add additional code to format the volume if it has not been prepared.
+    );
+
+    instance.userData.addCommands(
+      `mkfs -t xfs /dev/xvdf`,
+      `mkdir /mnt/${props.game.servername}`,
+      `mount /dev/xvdf /mnt/${props.game.servername}`,
+      `echo "UUID=$(lsblk -o +UUID | grep thepain | awk '{print $8}') /mnt/${props.game.servername}  xfs  defaults,nofail  0  2" >> /etc/fstab`,
+    );
+
 
     // 
     // This builds the configs and writes to the dist dir
     // 
     logic.buildServerConfig(
-      this.userData,
-      serverFiles,
+      instance.userData,
+      props.game
     );
 
-    console.log(`${props.cfg.servername}.service`)
-    console.log(path.join(DIST_DIR, `${props.cfg.servername}.service`))
 
-    const s3UnitFile = new Asset(this, "pz-unit-file", {
-      path: path.join(DIST_DIR, `${props.cfg.servername}.service`),
-    });
-    s3UnitFile.grantRead(props.role);
-
-    const s3ConfigDir = new Asset(this, "pz-config-dir", {
+    const serverConfigDir = new Asset(this, "pz-config-dir", {
       path: path.join(DIST_DIR, "server-config"),
     });
-    s3ConfigDir.grantRead(props.role);
+    serverConfigDir.grantRead(props.infra.role);
+
+    const unitFileDir = new Asset(this, "pz-unit-dir", {
+      path: path.join(DIST_DIR, "units"),
+    });
+    serverConfigDir.grantRead(props.infra.role);
 
 
     // Zip up config directory, I know this will zip because I am using the
     // folder as my `localFile`
-    this.userData.addS3DownloadCommand({
-      bucket: s3ConfigDir.bucket!,
-      bucketKey: s3ConfigDir.s3ObjectKey!,
-      localFile: "/home/steam/files/",
+    instance.userData.addS3DownloadCommand({
+      bucket: serverConfigDir.bucket!,
+      bucketKey: serverConfigDir.s3ObjectKey!,
+      localFile: `/mnt/${props.game.servername}/files/`,
     });
 
-    // This will be a single object because it is a filename
-    this.userData.addS3DownloadCommand({
-      bucket: s3UnitFile.bucket!,
-      bucketKey: s3UnitFile.s3ObjectKey!,
-      localFile: `/etc/systemd/system/${props.cfg.servername}.service`,
+    instance.userData.addS3DownloadCommand({
+      bucket: unitFileDir.bucket!,
+      bucketKey: unitFileDir.s3ObjectKey!,
+      localFile: `/mnt/${props.game.servername}/files/`,
     });
 
     // Place, enable, and start the service
-    this.userData.addCommands(
-      `mkdir -p /home/steam/pz/Server/`, // Just in case
-      `unzip /home/steam/files/${s3ConfigDir.s3ObjectKey} -d /home/steam/pz/Server/`,
-      `chmod +x /etc/systemd/system/${props.cfg.servername}.service`,
-      `systemctl enable ${props.cfg.servername}.service`,
-      `systemctl start ${props.cfg.servername}.service`,
+    instance.userData.addCommands(
+      `mkdir -p /mnt/${props.game.servername}/Server/`, // Just in case
+      `unzip /mnt/${props.game.servername}/files/${serverConfigDir.s3ObjectKey} -d /mnt/${props.game.servername}/Server/`,
+      `unzip /mnt/${props.game.servername}/files/${unitFileDir.s3ObjectKey} -d /etc/systemd/system/`,
+      `chmod +x /etc/systemd/system/${props.game.servername}.service`,
     );
 
-    props.role.addManagedPolicy(
-      iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonSSMManagedInstanceCore")
+    console.log(`${props.game.servername}_service.service`)
+
+    // TODO fix up her'
+    instance.userData.addCommands(
+      `systemctl enable ${props.game.servername}_service.service`,
+      `systemctl start ${props.game.servername}_service.service`,
+      // `systemctl enable ebs-unit.service`,
+      // `systemctl start ebs-unit.service`,
+      // `systemctl enable r53-unit.service`,
+      // `systemctl start r53-unit.service`,
     );
-
-    // ---- Start server
-    const instance = new ec2.Instance(this, "project-zomboid-ec2", {
-      instanceType: new ec2.InstanceType(props.cfg.instancetype),
-      machineImage: machineImage,
-      vpc: props.vpc,
-      vpcSubnets: {
-        subnetType: props.cfg.public === true || undefined ? ec2.SubnetType.PUBLIC : ec2.SubnetType.PRIVATE_WITH_NAT,
-      },
-      keyName: props.cfg.keyName,
-      securityGroup: props.sg,
-      role: props.role,
-      userData: this.userData,
-    });
-    Tags.of(instance).add("game", `pz-${props.cfg.servername}`);
-
-
 
     // Holder for pz sg's
     // todo::nested?
@@ -176,7 +211,7 @@ export class GameServerStack extends Construct implements ITaggable {
       this,
       "zomboid-server-port-reqs",
       {
-        vpc: props.vpc,
+        vpc: props.infra.vpc,
         allowAllOutbound: true,
         description: "sg to match zomboid requirements",
       }
@@ -216,46 +251,33 @@ export class GameServerStack extends Construct implements ITaggable {
     // If a subdomain is provided, create and use it
     // warning: will fail if trying to use twice
     let pzHz: r53.IPublicHostedZone;
-    if (props.cfg.subdomain) {
+    if (props.game.servername) {
       pzHz = new r53.PublicHostedZone(this, "HostedZoneDev", {
-        zoneName: props.cfg.subdomain + "." + props.hz.zoneName,
+        zoneName: props.game.servername + "." + props.infra.hz.zoneName,
       });
       // todo::This can probably be a downstream lookup
       new r53.NsRecord(this, "NsForParentDomain", {
-        zone: props.hz,
+        zone: props.infra.hz,
         recordName: pzHz.zoneName,
         values: pzHz.hostedZoneNameServers!, // exclamation is like, hey it might be null but no: https://stackoverflow.com/questions/54496398/typescript-type-string-undefined-is-not-assignable-to-type-string
       });
     } else {
-      pzHz = props.hz;
+      pzHz = props.infra.hz;
     }
 
-    new r53.ARecord(this, "PzARecordB", {
+    new r53.ARecord(this, `PzARecordB-${props.game.servername}`, {
       zone: pzHz!,
+      // ERROR here
       target: r53.RecordTarget.fromIpAddresses(instance.instancePublicIp),
     });
 
 
+    console.log(this.userData);
+
     // Create outputs for connecting
-    new CfnOutput(this, `IP Address-${props.cfg.servername}`, {
+    new CfnOutput(this, `IPAddress-${props.game.servername}`, {
       value: instance.instancePublicIp,
-      exportName: `${props.cfg.servername}-IP-Address`
+      exportName: `${props.game.servername}-IP-Address`
     });
-
-    //   // Configure the `natGatewayProvider` when defining a Vpc
-    //   const natGatewayProvider = NatProvider.instance({
-    //     instanceType: new InstanceType('t2.micro'),
-    //   });
-
-    //   // The code that defines your stack goes here
-    //   const baseVpc = new Vpc(this, 'base-vpc', {
-    //     cidr: props.cidrRange,
-    //     maxAzs: props.azs,
-    //     natGatewayProvider: natGatewayProvider,
-    //   })
-    //   const vpcSG = new SecurityGroup(this, 'SG', { vpc: baseVpc });
-
-    //   new CfnOutput(this, "VPC ID", { value: baseVpc.vpcId});
-    //   new CfnOutput(this, "SG ID", { value: vpcSG.securityGroupId});
   }
 }

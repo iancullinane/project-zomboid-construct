@@ -1,0 +1,14 @@
+[Unit]
+Description=Start the project zomboid server script as a service
+AssertPathExists={{ cachedir }}/start-server.sh
+
+[Service]
+RemainAfterExit=yes
+Restart=always
+RestartSec=10
+StartLimitInterval=0
+TimeoutStartSec=0
+ExecStart=/bin/sh -c '{{ cachedir }}/start-server.sh -servername {{ servername }} -adminpassword {{ adminPW }} -cachedir={{ cachedir }}'
+
+[Install]
+WantedBy=multi-user.target
