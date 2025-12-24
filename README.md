@@ -3,6 +3,10 @@
 project-zomboid-construct
 =========================
 
+>[!NOTE]
+>I would very much like to revive this....
+
+
 This will provide a project zomboid server runnning on EC2. Server configs will be generated at synth. If you provide a file under `assets/mods.txt` you can use a space seperated Modname:ModID format to list server mods. See the current mod list in this repo. This way they will be downloaded and managed at server start.  
 
 It is assumed you have a VPC and HostedZone to hook into. 
